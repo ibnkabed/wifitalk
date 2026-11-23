@@ -8,8 +8,9 @@
 // Built with the C# compiler that ships with Windows (.NET Framework 4, C# 5): see build.ps1.
 //
 // Protocol: one TCP connection per phone. Each frame is [1 byte type][4 bytes big-endian length][payload].
-//   type 1 = JSON (both ways), type 2 = phone microphone audio (PCM int16 mono 48 kHz),
-//   type 3 = computer sound for the phone (PCM int16 stereo, rate announced in JSON).
+//   type 1 = JSON (both ways), type 2 = phone microphone audio (float32 mono 48 kHz),
+//   type 3 = computer sound for the phone (float32 stereo interleaved, 48 kHz),
+//   type 4 = a file being sent (either way; see Files).
 // The first JSON frame must be {"hello":{"pin":"123456"}} or {"hello":{"token":"..."}}.
 
 using System;
@@ -386,6 +387,8 @@ namespace WiFiTalk
         readonly object writeGate = new object();
         readonly JavaScriptSerializer json = new JavaScriptSerializer { MaxJsonLength = 16 * 1024 * 1024 };
         bool authed;
+        FileStream upload;
+        string uploadPath;
         Loopback speaker;
         MicOut mic;
 
@@ -409,6 +412,7 @@ namespace WiFiTalk
                     if (!ReadFrame(out type, out payload)) break;
                     if (type == 1) HandleJson(Encoding.UTF8.GetString(payload));
                     else if (type == 2 && authed && mic != null) mic.Write(payload);
+                    else if (type == 4 && authed && upload != null) upload.Write(payload, 0, payload.Length);
                     if (authed) stream.ReadTimeout = Timeout.Infinite;
                 }
             }
@@ -417,6 +421,7 @@ namespace WiFiTalk
             {
                 if (speaker != null) speaker.Stop();
                 if (mic != null) mic.Dispose();
+                if (upload != null) upload.Dispose();
                 if (authed) server.Left(this);
                 Close();
             }
@@ -516,11 +521,11 @@ namespace WiFiTalk
             {
                 case "text": Input.TypeText(Str(a, "s")); break;
                 case "keys": Input.Combo(Str(a, "k")); break;
-                case "move": Input.Move(Int(a, "dx"), Int(a, "dy")); break;
+                case "move": Input.Move(Dbl(a, "dx"), Dbl(a, "dy")); break;
                 case "click": Input.Click(Str(a, "b"), Math.Max(1, Int(a, "n"))); break;
                 case "down": Input.Button(Str(a, "b"), true); break;
                 case "up": Input.Button(Str(a, "b"), false); break;
-                case "scroll": Input.Scroll(Int(a, "dx"), Int(a, "dy")); break;
+                case "scroll": Input.Scroll(Dbl(a, "dx"), Dbl(a, "dy")); break;
                 case "wait": Thread.Sleep(Math.Min(5000, Math.Max(0, Int(a, "ms")))); break;
                 case "open": Opener.Open(Str(a, "s")); break;
                 case "clip":
@@ -536,8 +541,22 @@ namespace WiFiTalk
                     else if (speaker != null) { speaker.Stop(); speaker = null; }
                     break;
                 case "mic":
-                    if (Bool(a, "on")) { if (mic == null) mic = MicOut.Open(); if (mic == null) throw new Exception("no_virtual_cable"); }
+                    if (Bool(a, "on")) { if (mic == null) mic = MicOut.Open(); if (mic == null) throw new Exception("no_virtual_cable"); reply["device"] = mic.Name; }
                     else if (mic != null) { mic.Dispose(); mic = null; }
+                    break;
+                case "ls": reply["listing"] = Files.List(Str(a, "s")); break;
+                case "get": Files.Send(Str(a, "s"), this); break;
+                case "put":
+                    if (upload != null) upload.Dispose();
+                    string savedPath;
+                    upload = Files.Create(Str(a, "s"), Str(a, "sub"), out savedPath);
+                    uploadPath = savedPath;
+                    break;
+                case "putend":
+                    if (upload == null) throw new Exception("no upload in progress");
+                    long size = upload.Length;
+                    upload.Dispose(); upload = null;
+                    reply["file"] = new Dictionary<string, object> { { "name", Path.GetFileName(uploadPath) }, { "path", Files.Relative(uploadPath) }, { "size", size } };
                     break;
                 case "ping": break;
                 default: throw new Exception("unknown action: " + Str(a, "t"));
@@ -568,6 +587,11 @@ namespace WiFiTalk
         {
             object v; if (!d.TryGetValue(k, out v) || v == null) return 0;
             try { return (int)Math.Round(Convert.ToDouble(v, System.Globalization.CultureInfo.InvariantCulture)); } catch { return 0; }
+        }
+        static double Dbl(Dictionary<string, object> d, string k)
+        {
+            object v; if (!d.TryGetValue(k, out v) || v == null) return 0;
+            try { return Convert.ToDouble(v, System.Globalization.CultureInfo.InvariantCulture); } catch { return 0; }
         }
         static bool Bool(Dictionary<string, object> d, string k)
         {
@@ -659,7 +683,16 @@ namespace WiFiTalk
             Send(list);
         }
 
-        public static void Move(int dx, int dy) { Send(new List<Native.INPUT> { Mouse(MOVE, dx, dy, 0) }); }
+        static double restX, restY, restWheel, restHWheel;
+
+        /// Moves by a fractional amount; what is under a pixel is carried to the next move.
+        public static void Move(double dx, double dy)
+        {
+            restX += dx; restY += dy;
+            int x = (int)Math.Truncate(restX), y = (int)Math.Truncate(restY);
+            restX -= x; restY -= y;
+            if (x != 0 || y != 0) Send(new List<Native.INPUT> { Mouse(MOVE, x, y, 0) });
+        }
 
         public static void Click(string button, int times)
         {
@@ -675,11 +708,15 @@ namespace WiFiTalk
             Send(new List<Native.INPUT> { Mouse(press ? down : up, 0, 0, 0) });
         }
 
-        public static void Scroll(int dx, int dy)
+        /// Scrolls by wheel notches (fractions add up): positive dy scrolls up, positive dx right.
+        public static void Scroll(double dx, double dy)
         {
+            restWheel += dy; restHWheel += dx;
+            int v = (int)Math.Truncate(restWheel), h = (int)Math.Truncate(restHWheel);
+            restWheel -= v; restHWheel -= h;
             var list = new List<Native.INPUT>();
-            if (dy != 0) list.Add(Mouse(WHEEL, 0, 0, dy));
-            if (dx != 0) list.Add(Mouse(HWHEEL, 0, 0, dx));
+            if (v != 0) list.Add(Mouse(WHEEL, 0, 0, v * 120));
+            if (h != 0) list.Add(Mouse(HWHEEL, 0, 0, h * 120));
             Send(list);
         }
 
@@ -751,6 +788,79 @@ namespace WiFiTalk
         }
     }
 
+    // ---------------------------------------------------------------- the shared folder
+
+    /// One folder the phone can browse, fetch from and send to: Downloads\WiFiTalk. Every path from the phone
+    /// is relative to it, and anything that would climb out of it is refused.
+    static class Files
+    {
+        public static readonly string Root = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "WiFiTalk");
+
+        static string Resolve(string relative)
+        {
+            Directory.CreateDirectory(Root);
+            var full = Path.GetFullPath(Path.Combine(Root, (relative ?? "").Replace('/', '\\').TrimStart('\\')));
+            var root = Path.GetFullPath(Root).TrimEnd('\\');
+            if (!full.Equals(root, StringComparison.OrdinalIgnoreCase) && !full.StartsWith(root + "\\", StringComparison.OrdinalIgnoreCase))
+                throw new Exception("outside the shared folder");
+            return full;
+        }
+
+        public static string Relative(string full)
+        {
+            var root = Path.GetFullPath(Root).TrimEnd('\\');
+            return full.Length <= root.Length ? "" : full.Substring(root.Length + 1).Replace('\\', '/');
+        }
+
+        static double Epoch(DateTime t) { return (t.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds; }
+
+        public static Dictionary<string, object> List(string relative)
+        {
+            var dir = Resolve(relative);
+            if (!Directory.Exists(dir)) throw new Exception("folder not found");
+            var entries = new List<object>();
+            foreach (var d in Directory.GetDirectories(dir))
+                entries.Add(new Dictionary<string, object> { { "name", Path.GetFileName(d) }, { "path", Relative(d) }, { "is_dir", true }, { "size", 0 }, { "modified", Epoch(Directory.GetLastWriteTime(d)) } });
+            foreach (var f in Directory.GetFiles(dir))
+            {
+                var info = new FileInfo(f);
+                if ((info.Attributes & FileAttributes.Hidden) != 0) continue;
+                entries.Add(new Dictionary<string, object> { { "name", info.Name }, { "path", Relative(f) }, { "is_dir", false }, { "size", info.Length }, { "modified", Epoch(info.LastWriteTime) } });
+            }
+            var rel = Relative(dir);
+            object parent = null;
+            if (rel.Length > 0) { int cut = rel.LastIndexOf('/'); parent = cut < 0 ? "" : rel.Substring(0, cut); }
+            return new Dictionary<string, object> { { "root", "Downloads\\WiFiTalk" }, { "path", rel }, { "parent", parent }, { "entries", entries } };
+        }
+
+        /// Streams a file to the phone as type-4 frames; the action's reply follows the last one.
+        public static void Send(string relative, Session session)
+        {
+            var path = Resolve(relative);
+            using (var f = File.OpenRead(path))
+            {
+                var buf = new byte[256 * 1024];
+                int n;
+                while ((n = f.Read(buf, 0, buf.Length)) > 0) session.Send(4, buf, n);
+            }
+        }
+
+        /// A new file for an upload, never overwriting: "name (2).ext" when the name is taken.
+        public static FileStream Create(string name, string sub, out string path)
+        {
+            name = Path.GetFileName(name ?? "");
+            if (name.Length == 0) name = "file";
+            var dir = Resolve(sub);
+            Directory.CreateDirectory(dir);
+            path = Path.Combine(dir, name);
+            var stem = Path.GetFileNameWithoutExtension(name);
+            var ext = Path.GetExtension(name);
+            for (int i = 2; File.Exists(path); i++) path = Path.Combine(dir, stem + " (" + i + ")" + ext);
+            return new FileStream(path, FileMode.CreateNew, FileAccess.Write);
+        }
+    }
+
     // ---------------------------------------------------------------- computer sound to the phone (WASAPI loopback)
 
     class Loopback
@@ -795,11 +905,14 @@ namespace WiFiTalk
                 var capIid = typeof(Wasapi.IAudioCaptureClient).GUID;
                 Marshal.ThrowExceptionForHR(client.GetService(ref capIid, out cap));
                 var capture = (Wasapi.IAudioCaptureClient)cap;
-                session.AnnounceSpeaker(rate);
+                // The phone always gets float32 stereo at 48 kHz; another mixer rate is resampled linearly.
+                session.AnnounceSpeaker(48000);
                 Marshal.ThrowExceptionForHR(client.Start());
-                var outBuf = new byte[rate / 10 * 4];
+                var outBuf = new byte[48000 / 10 * 8];
                 int outLen = 0;
                 int frameBytes = channels * bits / 8;
+                double step = rate / 48000.0, pos = 0;
+                float prevL = 0, prevR = 0;
                 while (running)
                 {
                     Thread.Sleep(10);
@@ -809,35 +922,49 @@ namespace WiFiTalk
                         IntPtr data; uint frames, flags; ulong p1, p2;
                         if (capture.GetBuffer(out data, out frames, out flags, out p1, out p2) != 0) break;
                         bool silent = (flags & 2) != 0;
-                        for (int f = 0; f < frames; f++)
+                        // pos runs over [-1, frames): -1 is the last frame of the previous packet
+                        while (pos < frames - 1 || (step == 1.0 && pos < frames))
                         {
-                            for (int ch = 0; ch < 2; ch++)
-                            {
-                                int src = Math.Min(ch, channels - 1);
-                                short v = 0;
-                                if (!silent)
-                                {
-                                    int off = f * frameBytes + src * bits / 8;
-                                    if (isFloat)
-                                    {
-                                        float x = BitConverter.ToSingle(BitConverter.GetBytes(Marshal.ReadInt32(data, off)), 0);
-                                        v = (short)Math.Max(-32768, Math.Min(32767, (int)(x * 32767f)));
-                                    }
-                                    else if (bits == 16) v = Marshal.ReadInt16(data, off);
-                                    else if (bits == 32) v = (short)(Marshal.ReadInt32(data, off) >> 16);
-                                }
-                                if (outLen + 2 > outBuf.Length) { session.Send(3, outBuf, outLen); outLen = 0; }
-                                outBuf[outLen++] = (byte)v; outBuf[outLen++] = (byte)(v >> 8);
-                            }
+                            int i0 = (int)Math.Floor(pos);
+                            double t = pos - i0;
+                            float l0, r0, l1, r1;
+                            if (i0 < 0) { l0 = prevL; r0 = prevR; } else { Sample(data, i0, frameBytes, bits, channels, isFloat, silent, out l0, out r0); }
+                            if (t > 0 && i0 + 1 < frames) Sample(data, i0 + 1, frameBytes, bits, channels, isFloat, silent, out l1, out r1);
+                            else { l1 = l0; r1 = r0; }
+                            float l = (float)(l0 + (l1 - l0) * t), r = (float)(r0 + (r1 - r0) * t);
+                            if (outLen + 8 > outBuf.Length) { session.Send(3, outBuf, outLen); outLen = 0; }
+                            Buffer.BlockCopy(BitConverter.GetBytes(l), 0, outBuf, outLen, 4);
+                            Buffer.BlockCopy(BitConverter.GetBytes(r), 0, outBuf, outLen + 4, 4);
+                            outLen += 8;
+                            pos += step;
                         }
+                        if (frames > 0) Sample(data, (int)frames - 1, frameBytes, bits, channels, isFloat, silent, out prevL, out prevR);
+                        pos -= frames;
                         capture.ReleaseBuffer(frames);
-                        if (outLen >= rate / 50 * 4) { session.Send(3, outBuf, outLen); outLen = 0; }   // every ~20 ms
+                        if (outLen >= 48000 / 50 * 8) { session.Send(3, outBuf, outLen); outLen = 0; }   // every ~20 ms
                     }
                 }
                 client.Stop();
             }
             catch { running = false; }
             finally { if (client != null) Marshal.ReleaseComObject(client); }
+        }
+
+        /// One frame of the mixer as two floats (left, right); a mono mixer feeds both.
+        static void Sample(IntPtr data, int frame, int frameBytes, int bits, int channels, bool isFloat, bool silent, out float l, out float r)
+        {
+            l = r = 0;
+            if (silent) return;
+            l = Read(data, frame * frameBytes, bits, isFloat);
+            r = channels > 1 ? Read(data, frame * frameBytes + bits / 8, bits, isFloat) : l;
+        }
+
+        static float Read(IntPtr data, int off, int bits, bool isFloat)
+        {
+            if (isFloat) return BitConverter.ToSingle(BitConverter.GetBytes(Marshal.ReadInt32(data, off)), 0);
+            if (bits == 16) return Marshal.ReadInt16(data, off) / 32768f;
+            if (bits == 32) return Marshal.ReadInt32(data, off) / 2147483648f;
+            return 0;
         }
     }
 
@@ -892,6 +1019,7 @@ namespace WiFiTalk
     class MicOut : IDisposable
     {
         IntPtr handle;
+        public string Name = "";
         readonly List<IntPtr> pending = new List<IntPtr>();
         static readonly int FlagsOffset = (int)Marshal.OffsetOf(typeof(Native.WAVEHDR), "dwFlags");
 
@@ -913,9 +1041,12 @@ namespace WiFiTalk
         {
             int dev = FindCable();
             if (dev < 0) return null;
-            var fmt = new Native.WAVEFORMATEX { wFormatTag = 1, nChannels = 1, nSamplesPerSec = 48000, wBitsPerSample = 16, nBlockAlign = 2, nAvgBytesPerSec = 96000 };
+            var fmt = new Native.WAVEFORMATEX { wFormatTag = 3, nChannels = 1, nSamplesPerSec = 48000, wBitsPerSample = 32, nBlockAlign = 4, nAvgBytesPerSec = 192000 };
             var m = new MicOut();
             if (Native.waveOutOpen(out m.handle, new IntPtr(dev), ref fmt, IntPtr.Zero, IntPtr.Zero, 0) != 0) return null;
+            var caps = new Native.WAVEOUTCAPS();
+            Native.waveOutGetDevCaps(new IntPtr(dev), ref caps, Marshal.SizeOf(typeof(Native.WAVEOUTCAPS)));
+            m.Name = caps.szPname ?? "CABLE Input";
             return m;
         }
 
@@ -924,7 +1055,7 @@ namespace WiFiTalk
             lock (pending)
             {
                 Reap(false);
-                if (pending.Count > 25) return;   // more than ~half a second behind: drop rather than lag
+                if (pending.Count > 40) return;   // more than ~half a second behind: drop rather than lag
                 var data = Marshal.AllocHGlobal(pcm.Length);
                 Marshal.Copy(pcm, 0, data, pcm.Length);
                 var hdr = new Native.WAVEHDR { lpData = data, dwBufferLength = (uint)pcm.Length };

@@ -1,0 +1,102 @@
+import AVFoundation
+import Foundation
+
+@MainActor
+final class AudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate {
+    @Published private(set) var isRecording = false
+    private var recorder: AVAudioRecorder?
+    private(set) var fileURL: URL?
+
+    private func requirePermission() async throws {
+        let session = AVAudioSession.sharedInstance()
+        switch session.recordPermission {
+        case .granted:
+            return
+        case .denied:
+            throw WiFiTalkError.server("إذن الميكروفون مرفوض. فعّله من إعدادات الآيفون ← الخصوصية والأمان ← الميكروفون ← WiFi Talk")
+        case .undetermined:
+            let granted = await withCheckedContinuation { continuation in
+                session.requestRecordPermission { continuation.resume(returning: $0) }
+            }
+            if !granted {
+                throw WiFiTalkError.server("لم يُمنح WiFi Talk إذن استخدام الميكروفون")
+            }
+        @unknown default:
+            throw WiFiTalkError.server("تعذر التحقق من إذن الميكروفون")
+        }
+    }
+
+    /// - Parameter sharedWithStream: `true` when the computer microphone or the
+    ///   computer speaker already owns the audio session. `.record` would
+    ///   silence a running speaker stream outright, so the shared case takes
+    ///   `.playAndRecord` instead - the same compromise the two streamers
+    ///   already make when they run together.
+    func start(sharedWithStream: Bool = false) async throws {
+        try await requirePermission()
+        recorder?.stop()
+        recorder = nil
+        fileURL = nil
+        let session = AVAudioSession.sharedInstance()
+        if sharedWithStream {
+            try session.setCategory(
+                .playAndRecord,
+                mode: .measurement,
+                options: [.defaultToSpeaker]
+            )
+        } else {
+            try session.setCategory(.record, mode: .measurement)
+        }
+        try session.setPreferredSampleRate(48_000)
+        try session.setPreferredIOBufferDuration(0.01)
+        try session.setActive(true)
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("wifitalk-\(UUID().uuidString).wav")
+        let settings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: 16_000,
+            AVNumberOfChannelsKey: 1,
+            AVLinearPCMBitDepthKey: 16,
+            AVLinearPCMIsFloatKey: false,
+            AVLinearPCMIsBigEndianKey: false,
+        ]
+        let value = try AVAudioRecorder(url: url, settings: settings)
+        value.delegate = self
+        value.isMeteringEnabled = true
+        guard value.prepareToRecord() else {
+            // Same rule as on the way out: a stream that owns this session must
+            // survive a dictation that could not even start.
+            if !sharedWithStream {
+                try? session.setActive(false, options: .notifyOthersOnDeactivation)
+            }
+            throw WiFiTalkError.server("تعذر تجهيز ملف التسجيل الصوتي")
+        }
+        guard value.record() else { throw WiFiTalkError.server("تعذر بدء التسجيل") }
+        recorder = value
+        fileURL = url
+        isRecording = true
+    }
+
+    /// - Parameter keepSessionActive: `true` while the computer microphone or
+    ///   the computer speaker is still streaming. Deactivating the session
+    ///   under a live stream kills it, which is why the two streamers already
+    ///   hand this flag to each other.
+    func stop(keepSessionActive: Bool = false) async -> URL? {
+        guard let activeRecorder = recorder else { return nil }
+        let duration = activeRecorder.currentTime
+        activeRecorder.stop()
+        recorder = nil
+        isRecording = false
+        if !keepSessionActive {
+            try? AVAudioSession.sharedInstance()
+                .setActive(false, options: .notifyOthersOnDeactivation)
+        }
+        try? await Task.sleep(nanoseconds: 80_000_000)
+        guard let fileURL,
+              let size = try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize,
+              duration >= 0.15,
+              size > 44 else {
+            return nil
+        }
+        return fileURL
+    }
+}

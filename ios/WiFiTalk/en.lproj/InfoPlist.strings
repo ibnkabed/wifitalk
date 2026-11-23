@@ -1,0 +1,5 @@
+"NSLocalNetworkUsageDescription" = "WiFiTalk connects to its companion on your computer over your Wi-Fi.";
+"NSMicrophoneUsageDescription" = "WiFiTalk listens to your commands and dictation, and can send your voice to the computer as a microphone.";
+"NSSpeechRecognitionUsageDescription" = "WiFiTalk turns what you say into text, on this iPhone when it can.";
+"NSCameraUsageDescription" = "WiFiTalk uses the camera to take a photo and send it straight to the computer.";
+"NSPhotoLibraryAddUsageDescription" = "WiFiTalk saves photos you fetch from the computer to your library when you choose to.";

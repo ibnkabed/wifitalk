@@ -108,6 +108,36 @@ send_json(s, {"id": 5, "do": [{"t": "format-disk"}]})
 r = read_json(s)
 check("unknown action refused", r.get("ok") is False and "unknown action" in r.get("error", ""))
 
+# the shared folder: send a file, list it, fetch it back, and refuse a path that climbs out
+name = "wifitalk-test-%d.txt" % int(time.time())
+body = ("WiFiTalk ✓ ملف\n" * 5000).encode("utf-8")
+send_json(s, {"id": 10, "do": [{"t": "put", "s": name}]})
+read_json(s)
+for i in range(0, len(body), 100000):
+    send(s, 4, body[i:i + 100000])
+send_json(s, {"id": 11, "do": [{"t": "putend"}]})
+saved = (read_json(s).get("file") or {})
+check("file sent to the computer", saved.get("size") == len(body))
+send_json(s, {"id": 12, "do": [{"t": "ls", "s": ""}]})
+listing = read_json(s).get("listing") or {}
+check("shared folder lists it", any(e.get("name") == saved.get("name") for e in listing.get("entries", [])))
+send_json(s, {"id": 13, "do": [{"t": "get", "s": saved.get("path", "")}]})
+got = b""
+while True:
+    kind, payload = read_frame(s)
+    if kind == 4:
+        got += payload
+    elif kind == 1 and json.loads(payload).get("done") == 13:
+        break
+check("file fetched back unchanged", got == body)
+send_json(s, {"id": 14, "do": [{"t": "get", "s": "../../Windows/win.ini"}]})
+r = read_json(s)
+check("path outside the shared folder refused", r.get("ok") is False)
+try:
+    os.remove(os.path.join(os.environ["USERPROFILE"], "Downloads", "WiFiTalk", saved.get("name", "")))
+except OSError:
+    pass
+
 # computer sound: announced rate, then audio frames while something plays (silence sends nothing)
 send_json(s, {"id": 6, "do": [{"t": "speaker", "on": True}]})
 rate, audio, end = None, 0, time.time() + 2

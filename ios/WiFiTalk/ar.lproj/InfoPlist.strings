@@ -1,3 +1,0 @@
-"NSLocalNetworkUsageDescription" = "يتصل WiFiTalk ببرنامجه المرافق على الكمبيوتر عبر الواي فاي.";
-"NSMicrophoneUsageDescription" = "يستمع WiFiTalk إلى أوامرك الصوتية وإملائك، ويمكنه إرسال صوتك إلى الكمبيوتر ميكروفونًا.";
-"NSSpeechRecognitionUsageDescription" = "يحوّل WiFiTalk كلامك إلى نص، على هذا الجوال حين يستطيع.";

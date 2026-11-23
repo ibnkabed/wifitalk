@@ -32,6 +32,8 @@ final class Companion: ObservableObject {
 
     var onSpeakerFormat: ((Double) -> Void)?
     var onSpeakerAudio: ((Data) -> Void)?
+    /// Pieces of a file the computer is sending (an action "get" in progress).
+    var onFileChunk: ((Data) -> Void)?
 
     private var connection: NWConnection?
     private var nextID = 1
@@ -45,8 +47,15 @@ final class Companion: ObservableObject {
     func connect(address: String, pin: String?, token: String?) async throws -> String {
         disconnect()
         state = .connecting
-        let host = NWEndpoint.Host(address.trimmingCharacters(in: .whitespaces))
-        let conn = NWConnection(host: host, port: NWEndpoint.Port(rawValue: Self.port)!, using: Self.parameters())
+        // "192.168.1.20" or "192.168.1.20:47821"
+        var hostText = address.trimmingCharacters(in: .whitespaces)
+        var port = Self.port
+        if let colon = hostText.lastIndex(of: ":"), let p = UInt16(hostText[hostText.index(after: colon)...]) {
+            port = p
+            hostText = String(hostText[..<colon])
+        }
+        let host = NWEndpoint.Host(hostText)
+        let conn = NWConnection(host: host, port: NWEndpoint.Port(rawValue: port)!, using: Self.parameters())
         connection = conn
         do {
             let once = Once()
@@ -133,6 +142,21 @@ final class Companion: ObservableObject {
         sendFrame(type: 2, pcm)
     }
 
+    /// One piece of a file being sent to the computer; waits until it has left, so a large file is not
+    /// held in memory all at once.
+    func sendFileChunk(_ data: Data) async throws {
+        guard isConnected, let connection else { throw AIError(String(localized: "Not connected to the computer")) }
+        var frame = Data([4])
+        var length = UInt32(data.count).bigEndian
+        frame.append(Data(bytes: &length, count: 4))
+        frame.append(data)
+        try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in
+            connection.send(content: frame, completion: .contentProcessed { error in
+                if let error { c.resume(throwing: error) } else { c.resume() }
+            })
+        }
+    }
+
     // MARK: private
 
     private static func parameters() -> NWParameters {
@@ -206,6 +230,8 @@ final class Companion: ObservableObject {
             }
         case 3:
             onSpeakerAudio?(body)
+        case 4:
+            onFileChunk?(body)
         default:
             break
         }
