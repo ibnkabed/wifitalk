@@ -1,7 +1,7 @@
 # Footage for the #BuildHybridAI demo video: the real app in the iOS simulator runs DemoTour (one unhurried pass
 # over every control) against the stand-in computer (tests/mock_companion.py), with live Firebase AI Logic calls.
 # The recording, the time it started, and the mock's timed log of scene marks and received actions come back as
-# the artifact `demo-footage`; the video is cut and narrated from them on the owner's PC (exports/video-tool).
+# the artifact `demo-footage`, from which the narrated demo video is cut.
 name: Demo video footage
 
 on:

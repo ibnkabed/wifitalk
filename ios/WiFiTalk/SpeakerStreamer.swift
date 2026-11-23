@@ -47,7 +47,7 @@ final class SpeakerStreamer {
     // while the computer itself answered 11,000 local requests in five
     // minutes without one over 50 ms: the waits are the Wi-Fi and the phone.
     // So a break deepens the cushion by 40 ms, up to 200 ms, and a calm
-    // half minute gives 20 ms of it back. The owner's rule still holds -
+    // half minute gives 20 ms of it back. The rule still holds -
     // the sound must not trail the picture - but only as far as the link
     // allows: a steady link plays at 80 ms, a stuttering one trades a little
     // delay for no breaks, and the delay is undone once it calms down.
@@ -107,7 +107,7 @@ final class SpeakerStreamer {
     /// An envelope limiter without lookahead was worse on both counts, and
     /// measurably: 149 hard-clipped samples at each note onset where the knee
     /// had none, because a 1.5 ms attack cannot catch the first peak of a
-    /// 2.27 ms cycle, and 1.5 dB quieter besides. The owner heard both.
+    /// 2.27 ms cycle, and 1.5 dB quieter besides. Both were audible.
     ///
     /// Looking ahead fixes the cause rather than the symptom. The audio is
     /// delayed by three milliseconds and the envelope is computed on what has
@@ -135,7 +135,7 @@ final class SpeakerStreamer {
     /// at 4.5 the limiter never touched it. Film music is dense: at the same
     /// gain it came out 12.7 dB louder than speech, the limiter held it down
     /// 61% of the time and its gain swung 24 dB a second with every beat -
-    /// the "pumped" sound the owner heard as stutter under background music.
+    /// the "pumped" sound heard as stutter under background music.
     /// The leveler follows loudness over 300 ms and lowers the gain within
     /// 50 ms when the material is dense, then lets it rise back over 1.5 s.
     /// Speech never reaches the target, so it keeps its full gain (measured

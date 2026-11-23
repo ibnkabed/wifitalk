@@ -153,8 +153,7 @@ struct HealthResponse: Decodable {
     /// Absent when the companion predates manual provider selection.
     let providers: [ProviderStatus]?
     let defaultProvider: String?
-    /// The one model that proofreads every transcript through the guardian's
-    /// gateway. Absent from a companion older than 2026-10-05.
+    /// The engine that proofread the transcript, when one did.
     let corrector: String?
 
     enum CodingKeys: String, CodingKey {
@@ -251,13 +250,13 @@ struct CommandResult: Decodable {
     let reply: String
     let files: [CommandFile]
     let provider: String?
-    /// Set only for "افتح القفل": the phone sends its stored PIN next.
+    /// Unused here; kept so the result type stays one shape.
     let unlock: Bool?
-    /// A new command waiting for the owner's yes (owner, 2026-11-07).
+    /// A command waiting for the user's yes.
     let pending: PendingCommand?
 }
 
-/// What the model understood. Nothing runs until the owner answers.
+/// What the model understood. Nothing runs until the user answers.
 struct PendingCommand: Decodable, Identifiable {
     let id: String
     let text: String

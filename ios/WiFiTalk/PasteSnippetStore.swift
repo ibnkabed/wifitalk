@@ -7,17 +7,15 @@ struct PasteSnippet: Codable, Identifiable, Equatable {
     var title = ""
     var text = ""
 
-    /// Only a slot with both a title and a text appears in the list (owner,
-    /// 2026-10-31): an empty one is a slot waiting in the settings.
+    /// Only a slot with both a title and a text appears in the list: an empty one is a slot waiting in the settings.
     var isFilled: Bool {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !text.isEmpty
     }
 }
 
-/// The snippets live on the phone alone, like the key button's PIN, so the
-/// button works without a model and without anything on the computer
-/// (owner, 2026-10-31). They are not secrets, so UserDefaults is enough.
+/// The snippets live on the phone alone, so the button works without a model
+/// and without anything on the computer. They are not secrets, so UserDefaults is enough.
 enum PasteSnippetStore {
     static let limit = 10
     private static let key = "wifiTalkPasteSnippets"

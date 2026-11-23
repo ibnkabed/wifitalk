@@ -66,7 +66,7 @@ final class MicStreamer: ObservableObject {
         try await requirePermission()
         let session = AVAudioSession.sharedInstance()
         // `.videoChat`, not `.voiceChat`, and the difference is the one the
-        // owner hears. Both carry the echo canceller this duplex mode cannot do
+        // user hears. Both carry the echo canceller this duplex mode cannot do
         // without, but `.voiceChat` is the handset mode: iOS puts its output on
         // the call volume channel, whose ceiling is well under the media one and
         // which the volume buttons do not raise while media is what is playing,

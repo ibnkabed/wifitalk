@@ -283,8 +283,8 @@ private struct KeyboardHomeView: View {
         model.pasteSnippets.filter(\.isFilled)
     }
 
-    /// A narrow column as wide as «العنوان الوطني», each title centred so
-    /// Arabic and English sit alike (owner, 2026-10-31); a longer title is
+    /// A narrow column, each title centred so right-to-left and left-to-right
+    /// titles sit alike; a longer title is
     /// cut with an ellipsis, and the text it pastes stays whole.
     private var snippetList: some View {
         VStack(spacing: 0) {
@@ -727,8 +727,8 @@ private struct SettingsView: View {
                             HStack {
                                 // A title like «password» or «PIN» made iOS take
                                 // both fields for a password form, so a paste was
-                                // refused and only the last letter stayed (owner,
-                                // 2026-10-31). An explicit type stops that guess.
+                                // refused and only the last letter stayed. An
+                                // explicit type stops that guess.
                                 TextField("Title", text: $snippet.title)
                                     .font(.body.bold())
                                     .textContentType(.oneTimeCode)

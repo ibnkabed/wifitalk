@@ -173,9 +173,8 @@ final class AppModel: ObservableObject {
             let response = try await client().health()
             providerStatuses = response.providers ?? []
             corrector = response.corrector
-            // A choice the companion no longer offers (Groq, removed
-            // 2026-10-05) moves to its default rather than staying on a
-            // service that is gone.
+            // A choice that is no longer offered moves to its default rather
+            // than staying on a service that is gone.
             if !providerStatuses.isEmpty,
                !providerStatuses.contains(where: { $0.id == transcriptionProviderID }) {
                 let fallback = response.defaultProvider.flatMap { id in
@@ -230,7 +229,7 @@ final class AppModel: ObservableObject {
 
     /// The clipboard button in the header: types a saved text into the
     /// computer's active window through the same queue as the text box, so it
-    /// never goes near a model (owner, 2026-10-31).
+    /// never goes near a model.
     func pasteSnippet(_ snippet: PasteSnippet) {
         guard snippet.isFilled else { return }
         enqueueInput([.edit(backspaces: 0, inserted: snippet.text)])
@@ -323,10 +322,7 @@ final class AppModel: ObservableObject {
     /// Two reasons it does not share the keyboard queue. A stroke produces
     /// pointer packets orders of magnitude faster than a typist produces
     /// keystrokes, and behind one serial queue a single slow keystroke would
-    /// stall the pointer. And when the sign-in service is paired, typing is
-    /// routed to it rather than to the companion; that service types at the
-    /// Windows sign-in desktop and has no pointer at all, so the mouse always
-    /// speaks to the companion on 8766.
+    /// stall the pointer.
     ///
     /// Only one request is ever in flight. Whatever the finger does while it is
     /// out is folded into the next batch, so the pointer is self-clocking: it
@@ -666,7 +662,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// The owner's yes or no to what the companion understood.
+    /// The user's yes or no to what the assistant understood.
     func answerPendingCommand(approve: Bool) async {
         guard let pending = pendingCommand else { return }
         pendingCommand = nil
