@@ -4,7 +4,7 @@
 
 [![Watch the demo video](https://img.youtube.com/vi/NRMdkc4mTAY/hqdefault.jpg)](https://youtu.be/NRMdkc4mTAY)
 
-**[Watch it on YouTube](https://youtu.be/NRMdkc4mTAY)**: the real app in the iOS simulator, with live Firebase AI Logic calls, beside the actions the PC received.
+**[Watch it on YouTube](https://youtu.be/NRMdkc4mTAY)**: the real app in the iOS simulator, with live Firebase AI Logic calls, beside the actions the PC received. Devpost project: https://devpost.com/software/wifitalk
 
 Say "open Chrome and search for flights to Riyadh", "write a short thank-you email to my team", or "lock the computer", and it happens on the computer. All the thinking happens on the iPhone, with hybrid AI through **Firebase AI Logic**:
 
