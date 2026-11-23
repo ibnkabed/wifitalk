@@ -66,14 +66,11 @@ final class DemoTour: XCTestCase {
         let fields = app.textFields
         if fields.element(boundBy: 0).waitForExistence(timeout: 10) {
             fields.element(boundBy: 0).tap()
-            fields.element(boundBy: 0).typeText("192.168.1.20")
-            pause(0.6)
             // the simulator's computer is the Mac itself
-            fields.element(boundBy: 0).press(forDuration: 1.0)
-            if app.menuItems["Select All"].waitForExistence(timeout: 2) { app.menuItems["Select All"].tap() }
             fields.element(boundBy: 0).typeText("127.0.0.1")
             fields.element(boundBy: 1).tap()
-            fields.element(boundBy: 1).typeText("123456")
+            // one digit at a time: the number pad dropped a digit typed in one go
+            for digit in "123456" { fields.element(boundBy: 1).typeText(String(digit)); pause(0.25) }
             pause(0.8)
             app.buttons["Connect"].tap()
         }
