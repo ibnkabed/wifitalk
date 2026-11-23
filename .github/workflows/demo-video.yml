@@ -69,7 +69,8 @@ jobs:
             -project ios/WiFiTalk.xcodeproj -scheme WiFiTalk -configuration Debug \
             -destination "id=$UDID" -derivedDataPath ios/build \
             CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= \
-            APP_CHECK_DEBUG_TOKEN="$APP_CHECK_DEBUG_TOKEN" | tail -5
+            APP_CHECK_DEBUG_TOKEN="$APP_CHECK_DEBUG_TOKEN" > out/build.log 2>&1 || { grep -E "error:|failed" out/build.log | grep -v -i token | head -40; exit 1; }
+          tail -3 out/build.log
 
       - name: Record the demo tour
         run: |
