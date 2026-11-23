@@ -1,0 +1,117 @@
+/* WiFiTalk: Arabic interface. The keys are the English texts in the code. */
+
+/* tabs */
+"Assistant" = "المساعد";
+"Trackpad" = "لوحة اللمس";
+"Keyboard" = "لوحة المفاتيح";
+"Controls" = "التحكم";
+"Settings" = "الإعدادات";
+
+/* connection */
+"Connected to %@" = "متصل بـ %@";
+"Connecting…" = "جارٍ الاتصال…";
+"Not connected: %@ Tap to retry." = "غير متصل: %@ اضغط لإعادة المحاولة.";
+"Not connected. Tap to connect." = "غير متصل. اضغط للاتصال.";
+"Connection closed" = "انقطع الاتصال";
+"Disconnected" = "قُطع الاتصال";
+"Not connected to the computer" = "لست متصلًا بالكمبيوتر";
+"The computer did not answer. Is WiFiTalk running there, on the same Wi-Fi?" = "لم يردّ الكمبيوتر. هل WiFiTalk يعمل فيه، وعلى نفس شبكة الواي فاي؟";
+"Unexpected answer from the computer" = "ردّ غير متوقع من الكمبيوتر";
+"The computer could not do that" = "تعذّر على الكمبيوتر تنفيذ ذلك";
+"Wrong PIN. Check the PIN in the WiFiTalk window on the computer." = "الرمز خطأ. راجع الرمز في نافذة WiFiTalk على الكمبيوتر.";
+"Too many wrong PINs. Wait a minute and try again." = "أُدخل رمز خطأ مرات كثيرة. انتظر دقيقة ثم حاول.";
+"This iPhone was unpaired on the computer. Pair again with the PIN." = "أُلغي اقتران هذا الجوال من الكمبيوتر. اقترن من جديد بالرمز.";
+
+/* pairing */
+"Your iPhone becomes your computer's assistant, keyboard, trackpad, microphone and speaker." = "يصبح جوالك مساعد الكمبيوتر ولوحة مفاتيحه ولوحة لمسه وميكروفونه وسماعته.";
+"1. On the Windows computer, run WiFiTalk.exe. Its icon appears beside the clock.\n2. Click the icon to see the address and PIN.\n3. Enter them here. Both devices must be on the same Wi-Fi." = "١. شغّل WiFiTalk.exe على كمبيوتر Windows، فتظهر أيقونته بجانب الساعة.\n٢. اضغط الأيقونة لترى العنوان والرمز.\n٣. أدخلهما هنا. ويجب أن يكون الجهازان على نفس الواي فاي.";
+"Computer" = "الكمبيوتر";
+"Address, like 192.168.1.20" = "العنوان، مثل 192.168.1.20";
+"PIN" = "الرمز";
+"Pair" = "اقتران";
+
+/* assistant */
+"Mode" = "الوضع";
+"Command" = "أمر";
+"Dictation" = "إملاء";
+"Or type a request…" = "أو اكتب طلبك…";
+"Thinking…" = "يفكّر…";
+"Listening…" = "يستمع…";
+"Speak" = "تحدّث";
+"Stop and send" = "أوقف وأرسل";
+"Speech recognized on this iPhone" = "يُفهم الكلام على هذا الجوال";
+"Speech recognized by Apple" = "يُفهم الكلام عبر Apple";
+"Speak, and your words are typed on the computer where the cursor is." = "تحدّث، فيُكتب كلامك في الكمبيوتر حيث المؤشر.";
+"Try: “Open Chrome and search for weather in Riyadh”, “Write a short thank-you email to my team”, “Volume down”, “Lock the computer”." = "جرّب: «افتح Chrome وابحث عن طقس الرياض»، «اكتب رسالة شكر قصيرة لفريقي»، «اخفض الصوت»، «اقفل الكمبيوتر».";
+"Do this on the computer?" = "أنفّذ هذا على الكمبيوتر؟";
+"Yes, do it" = "نعم، نفّذ";
+"Cancel" = "إلغاء";
+"Open %@" = "افتح %@";
+"Type “%@”" = "اكتب «%@»";
+"Press %@" = "اضغط %@";
+"Wait %@ s" = "انتظر %@ ث";
+"Power: %@" = "التشغيل: %@";
+"Understood on this iPhone (Apple on-device model)" = "فُهم على هذا الجوال (نموذج Apple على الجهاز)";
+"Understood by Gemini in the cloud (Firebase AI Logic)" = "فهمه Gemini في السحابة (Firebase AI Logic)";
+"The assistant's answer could not be read. Try saying it differently." = "تعذّرت قراءة ردّ المساعد. جرّب قوله بطريقة أخرى.";
+"Allow the microphone and speech recognition in Settings to talk to your computer." = "اسمح بالميكروفون والتعرّف على الكلام من إعدادات الجوال لتتحدث إلى الكمبيوتر.";
+"Speech recognition is not available for this language" = "التعرّف على الكلام غير متاح لهذه اللغة";
+"Firebase is not set up in this build" = "Firebase غير مُعدّ في هذه النسخة";
+"unexpected reply" = "ردّ غير متوقع";
+
+/* trackpad */
+"Move · tap to click · two-finger tap: right-click · two fingers: scroll · long press: drag" = "حرّك · اضغط للنقر · اضغط بإصبعين: نقر أيمن · بإصبعين: تمرير · ضغط مطوّل: سحب";
+"Left" = "أيسر";
+"Right" = "أيمن";
+
+/* keyboard */
+"Type here — it appears on the computer" = "اكتب هنا، فيظهر في الكمبيوتر";
+"Clear the box" = "امسح المربع";
+"Hide keyboard" = "أخفِ لوحة المفاتيح";
+"Show keyboard" = "أظهر لوحة المفاتيح";
+"Copy" = "نسخ";
+"Paste" = "لصق";
+"Undo" = "تراجع";
+"Select all" = "تحديد الكل";
+"Save" = "حفظ";
+"New tab" = "لسان جديد";
+"Switch app" = "تبديل التطبيق";
+"Desktop" = "سطح المكتب";
+
+/* controls */
+"Hear the computer on this iPhone" = "اسمع صوت الكمبيوتر في هذا الجوال";
+"Use this iPhone as the computer's microphone" = "استخدم الجوال ميكروفونًا للكمبيوتر";
+"Audio" = "الصوت";
+"The computer sees your voice on the “CABLE Output” microphone." = "يصل صوتك إلى الكمبيوتر على ميكروفون «CABLE Output».";
+"The microphone needs the free VB-CABLE driver on the computer." = "يحتاج الميكروفون برنامج VB-CABLE المجاني على الكمبيوتر.";
+"To use the iPhone as the computer's microphone, install the free VB-CABLE driver on the computer, then restart WiFiTalk there." = "لاستخدام الجوال ميكروفونًا للكمبيوتر، ثبّت برنامج VB-CABLE المجاني على الكمبيوتر، ثم أعد تشغيل WiFiTalk فيه.";
+"Volume and media" = "الصوت والوسائط";
+"Power" = "التشغيل";
+"Lock" = "قفل";
+"Sleep" = "سكون";
+"Restart" = "إعادة التشغيل";
+"Shut down" = "إيقاف التشغيل";
+"Are you sure?" = "هل أنت متأكد؟";
+"Yes" = "نعم";
+"The computer will %@ now." = "سينفّذ الكمبيوتر الآن: %@.";
+
+/* settings */
+"Address" = "العنوان";
+"Reconnect" = "أعد الاتصال";
+"Forget this computer" = "انسَ هذا الكمبيوتر";
+"Forget this computer?" = "أتنسى هذا الكمبيوتر؟";
+"Forget" = "انسَ";
+"I speak" = "أتحدث بـ";
+"Phone language" = "لغة الجوال";
+"English" = "الإنجليزية";
+"Voice" = "الصوت";
+"Ready with no key: Gemini through Firebase AI Logic" = "جاهز بلا مفتاح: Gemini عبر Firebase AI Logic";
+"Not available in this build" = "غير متاح في هذه النسخة";
+"Apple's model on this iPhone" = "نموذج Apple على هذا الجوال";
+"Available" = "متاح";
+"Not available here" = "غير متاح هنا";
+"Built-in AI" = "الذكاء الاصطناعي المدمج";
+"A short request in a language Apple's on-device model supports, such as English, is understood on this iPhone: private, free and offline. Longer writing, Arabic, and phones without Apple Intelligence use Gemini in the cloud through Firebase AI Logic. The computer only carries out the actions; it runs no AI." = "الطلب القصير بلغة يدعمها نموذج Apple على الجهاز، كالإنجليزية، يُفهم على هذا الجوال بخصوصية وبلا إنترنت. والكتابة الأطول والعربية والجوالات التي بلا Apple Intelligence تستعمل Gemini في السحابة عبر Firebase AI Logic. والكمبيوتر ينفّذ الأوامر فقط، ولا يشغّل أي ذكاء اصطناعي.";
+"About" = "عن التطبيق";
+"WiFiTalk turns your iPhone into your computer's assistant, keyboard, trackpad, microphone and speaker over your Wi-Fi." = "يجعل WiFiTalk جوالك مساعدًا للكمبيوتر ولوحة مفاتيح ولوحة لمس وميكروفونًا وسماعة، عبر الواي فاي.";
+"Source code and the Windows companion" = "الكود المصدري وبرنامج Windows المرافق";
