@@ -64,13 +64,25 @@ final class DemoTour: XCTestCase {
         mark("pair")
         pause(2)
         let fields = app.textFields
+        // the simulator's computer is the Mac itself; the keyboards sometimes drop a character, so each field is
+        // checked and typed again until it holds the right value
+        func fill(_ index: Int, _ text: String) {
+            let field = fields.element(boundBy: index)
+            for _ in 0..<4 {
+                field.tap()
+                pause(0.5)
+                let old = (field.value as? String) ?? ""
+                if old == text { return }
+                if !old.isEmpty && !old.hasPrefix("Computer") && !old.hasPrefix("Pairing") {
+                    field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: old.count + 2))
+                }
+                for ch in text { field.typeText(String(ch)); pause(0.12) }
+                pause(0.5)
+            }
+        }
         if fields.element(boundBy: 0).waitForExistence(timeout: 10) {
-            fields.element(boundBy: 0).tap()
-            // the simulator's computer is the Mac itself
-            fields.element(boundBy: 0).typeText("127.0.0.1")
-            fields.element(boundBy: 1).tap()
-            // one digit at a time: the number pad dropped a digit typed in one go
-            for digit in "123456" { fields.element(boundBy: 1).typeText(String(digit)); pause(0.25) }
+            fill(0, "127.0.0.1")
+            fill(1, "123456")
             pause(0.8)
             app.buttons["Connect"].tap()
         }
@@ -127,8 +139,9 @@ final class DemoTour: XCTestCase {
         pause(3)
         // close whatever the download opened, then the files sheet, until the main screen is back
         for _ in 0..<4 where !app.buttons["speaker"].firstMatch.isHittable {
+            let close = app.buttons["Close"].firstMatch
             let done = app.buttons["Done"].firstMatch
-            if done.exists { done.tap() } else { app.swipeDown(velocity: .fast) }
+            if close.exists { close.tap() } else if done.exists { done.tap() } else { app.swipeDown(velocity: .fast) }
             pause(1.2)
         }
         pause(0.8)
