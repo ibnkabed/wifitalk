@@ -12,7 +12,7 @@ struct WiFiTalkApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(model)
-                .environment(\.layoutDirection, Lang.isArabic ? .rightToLeft : .leftToRight)
+                .environment(\.layoutDirection, .leftToRight)
                 .tint(Color(red: 0.08, green: 0.58, blue: 0.72))
         }
     }

@@ -65,9 +65,9 @@ final class AppModel: ObservableObject {
         dictationLanguage = all[(index + 1) % all.count]
         defaults.set(dictationLanguage.rawValue, forKey: "wifiTalkDictationLanguage")
         switch dictationLanguage {
-        case .automatic: message = "لغة النص الصوتي: تلقائية"
-        case .arabic: message = "لغة النص الصوتي: العربية فقط"
-        case .english: message = "لغة النص الصوتي: الإنجليزية فقط"
+        case .automatic: message = "Dictation language: automatic"
+        case .arabic: message = "Dictation language: Arabic only"
+        case .english: message = "Dictation language: English only"
         }
     }
 
@@ -110,9 +110,9 @@ final class AppModel: ObservableObject {
         transcriptionProviderID = provider.id
         defaults.set(provider.id, forKey: "wifiTalkTranscriptionProvider")
         if isProviderReady(provider) == false {
-            message = "\(provider.fullLabel): لا يوجد مفتاح على الكمبيوتر"
+            message = "\(provider.fullLabel): not available"
         } else {
-            message = "خدمة النص الصوتي: \(provider.fullLabel)"
+            message = "Dictation: \(provider.fullLabel)"
         }
     }
 
@@ -127,7 +127,7 @@ final class AppModel: ObservableObject {
         if let corrector, !corrector.isEmpty { return corrector }
         guard !providerStatuses.isEmpty else { return "—" }
         let able = providerStatuses.filter { $0.canCorrect && $0.ready }
-        guard !able.isEmpty else { return "لا يوجد مصحح جاهز" }
+        guard !able.isEmpty else { return "No proofreader ready" }
         return able.map(\.provider.shortLabel).joined(separator: " ← ")
     }
 
@@ -140,7 +140,7 @@ final class AppModel: ObservableObject {
 
     var isPaired: Bool { !address.isEmpty && !token.isEmpty }
     var connectionLabel: String {
-        isMainConnected ? L("متصل الآن") : L("غير متصل")
+        isMainConnected ? L("Connected") : L("Not connected")
     }
 
     private func client(withToken: Bool = true) throws -> TalkAPIClient {
@@ -159,7 +159,7 @@ final class AppModel: ObservableObject {
             self.defaults.set(self.address, forKey: "wifiTalkAddress")
             self.defaults.set(response.token, forKey: "wifiTalkToken")
             self.pin = ""
-            self.message = "تم الاتصال بالكمبيوتر"
+            self.message = "Connected to the computer"
         }
     }
 
@@ -216,7 +216,7 @@ final class AppModel: ObservableObject {
         await checkConnection()
         message = isConnected
             ? "\(connectionLabel) — \(address)"
-            : "لا يصل الكمبيوتر على \(address)"
+            : "Can't reach the computer at \(address)"
     }
 
     func forgetPairing() {
@@ -234,7 +234,7 @@ final class AppModel: ObservableObject {
     func pasteSnippet(_ snippet: PasteSnippet) {
         guard snippet.isFilled else { return }
         enqueueInput([.edit(backspaces: 0, inserted: snippet.text)])
-        message = "لُصق: \(snippet.title)"
+        message = "Pasted: \(snippet.title)"
     }
 
     @discardableResult
@@ -393,17 +393,17 @@ final class AppModel: ObservableObject {
         let now = Date()
         if let last = lastMouseErrorAt, now.timeIntervalSince(last) < 2 { return }
         lastMouseErrorAt = now
-        message = "الماوس لا يصل إلى الكمبيوتر: \(error.localizedDescription)"
+        message = "The mouse can't reach the computer: \(error.localizedDescription)"
     }
 
     func copyPhoneClipboardToPC() async {
         guard let text = UIPasteboard.general.string, !text.isEmpty else {
-            message = "حافظة الآيفون فارغة"
+            message = "The iPhone clipboard is empty"
             return
         }
         await perform {
             try await self.client().setClipboard(text)
-            self.message = "نُسخت حافظة الآيفون إلى الكمبيوتر"
+            self.message = "Copied the iPhone clipboard to the computer"
         }
     }
 
@@ -411,11 +411,11 @@ final class AppModel: ObservableObject {
         await perform {
             let text = try await self.client().getClipboard()
             guard !text.isEmpty else {
-                self.message = "حافظة الكمبيوتر فارغة"
+                self.message = "The computer clipboard is empty"
                 return
             }
             UIPasteboard.general.string = text
-            self.message = "نُسخت حافظة الكمبيوتر إلى الآيفون"
+            self.message = "Copied the computer clipboard to the iPhone"
         }
     }
 
@@ -440,21 +440,21 @@ final class AppModel: ObservableObject {
             isRecordingCommand = false
             let shared = streamOwnsAudioSession
             guard let url = await recorder.stop(keepSessionActive: shared) else {
-                message = "التسجيل فارغ أو قصير جدًا"
+                message = "The recording is empty or too short"
                 await restoreSpeakerRouteAfterDictation()
                 return
             }
             isRunningCommand = true
             defer { isRunningCommand = false }
             await perform {
-                self.message = "أنفّذ الأمر…"
+                self.message = "Working on it…"
                 defer { try? FileManager.default.removeItem(at: url) }
                 let result = try await self.client().runCommand(
                     fileURL: url,
                     language: .automatic,
                     provider: self.transcriptionProvider
                 )
-                self.message = result.reply.isEmpty ? "تم" : result.reply
+                self.message = result.reply.isEmpty ? "Done" : result.reply
                 self.pendingCommand = result.pending
                 if !result.files.isEmpty {
                     await self.fetchCommandFiles(result.files, reply: self.message)
@@ -466,7 +466,7 @@ final class AppModel: ObservableObject {
             do {
                 try await recorder.start(sharedWithStream: streamOwnsAudioSession)
                 isRecordingCommand = true
-                message = "قل أمرك… ثم اضغط زر الأوامر مرة أخرى"
+                message = "Say your command… then tap the command button again"
             } catch {
                 isRecordingCommand = false
                 message = error.localizedDescription
@@ -482,9 +482,9 @@ final class AppModel: ObservableObject {
         isRunningCommand = true
         defer { isRunningCommand = false }
         await perform {
-            self.message = L("أنفّذ الأمر…")
+            self.message = L("Working on it…")
             let result = try await self.client().runCommand(text: text)
-            self.message = result.reply.isEmpty ? L("تم") : result.reply
+            self.message = result.reply.isEmpty ? L("Done") : result.reply
             self.pendingCommand = result.pending
         }
     }
@@ -498,15 +498,15 @@ final class AppModel: ObservableObject {
         var fetched: [URL] = []
         for (index, file) in files.enumerated() {
             message = files.count == 1
-                ? "أجلب \(file.name)…"
-                : "أجلب \(index + 1) من \(files.count)…"
+                ? "Fetching \(file.name)…"
+                : "Fetching \(index + 1) of \(files.count)…"
             do {
                 let url = try await client().downloadFile(
                     file.remote, into: directory
                 ) { _ in }
                 fetched.append(url)
             } catch {
-                message = "\(reply)\nتعذّر جلب \(file.name): \(error.localizedDescription)"
+                message = "\(reply)\nCouldn't fetch \(file.name): \(error.localizedDescription)"
             }
         }
         if !fetched.isEmpty {
@@ -521,12 +521,12 @@ final class AppModel: ObservableObject {
             isRecording = false
             let shared = streamOwnsAudioSession
             guard let url = await recorder.stop(keepSessionActive: shared) else {
-                message = "التسجيل فارغ أو قصير جدًا"
+                message = "The recording is empty or too short"
                 await restoreSpeakerRouteAfterDictation()
                 return
             }
             await perform {
-                self.message = "أحوّل الكلام إلى نص…"
+                self.message = "Turning speech into text…"
                 defer { try? FileManager.default.removeItem(at: url) }
                 let result = try await self.client().transcribe(
                     fileURL: url,
@@ -537,15 +537,15 @@ final class AppModel: ObservableObject {
                 let served = self.knownProviders.first { $0.id == result.provider }
                     ?? self.transcriptionProvider
                 self.message = result.correctionWarning == nil
-                    ? "تمت كتابة النص الصوتي في الكمبيوتر عبر \(served.fullLabel)"
-                    : "كُتب النص الخام من \(served.fullLabel) لأن التصحيح تعذر"
+                    ? "Typed on the computer · \(served.fullLabel)"
+                    : "Typed the raw text (\(served.fullLabel)): proofreading failed"
             }
             await restoreSpeakerRouteAfterDictation()
         } else {
             do {
                 try await recorder.start(sharedWithStream: streamOwnsAudioSession)
                 isRecording = true
-                message = "أتلقى كلامك… اضغط زر النص الصوتي مرة أخرى للإرسال عبر \(transcriptionProvider.fullLabel)"
+                message = "Listening… tap Dictate again to send · \(transcriptionProvider.fullLabel)"
             } catch {
                 isRecording = false
                 message = error.localizedDescription
@@ -575,7 +575,7 @@ final class AppModel: ObservableObject {
             isComputerSpeakerActive = false
             computerSpeakerDevice = ""
             isSpeakerStereo = false
-            message = "توقفت سماعة الكمبيوتر بعد النص الصوتي: \(error.localizedDescription)"
+            message = "Computer sound stopped after dictation: \(error.localizedDescription)"
         }
     }
 
@@ -601,7 +601,7 @@ final class AppModel: ObservableObject {
             isComputerSpeakerActive = false
             computerSpeakerDevice = ""
             isSpeakerStereo = false
-            message = "توقفت سماعة الكمبيوتر: \(error.localizedDescription)"
+            message = "Computer sound stopped: \(error.localizedDescription)"
         }
     }
 
@@ -614,8 +614,8 @@ final class AppModel: ObservableObject {
             isComputerMicActive = false
             computerMicDevice = ""
             message = micStreamer.lastError.isEmpty
-                ? "توقف مايك الكمبيوتر"
-                : "توقف المايك: \(micStreamer.lastError)"
+                ? "Computer microphone stopped"
+                : "Microphone stopped: \(micStreamer.lastError)"
             await rebuildSpeakerStream()
             return
         }
@@ -629,7 +629,7 @@ final class AppModel: ObservableObject {
             }
             self.isComputerMicActive = true
             self.computerMicDevice = self.micStreamer.deviceName
-            self.message = "الآيفون يعمل مايكًا للكمبيوتر مع معالجة الكلام ومراقبة الاستمرارية"
+            self.message = "The iPhone is now the computer's microphone, with voice processing"
         }
         await rebuildSpeakerStream()
     }
@@ -640,7 +640,7 @@ final class AppModel: ObservableObject {
             isComputerSpeakerActive = false
             computerSpeakerDevice = ""
             isSpeakerStereo = false
-            message = "توقفت سماعة الكمبيوتر"
+            message = "Computer sound stopped"
             return
         }
         await perform {
@@ -652,15 +652,15 @@ final class AppModel: ObservableObject {
             self.computerSpeakerDevice = self.speakerStreamer.deviceName
             self.isSpeakerStereo = self.speakerStreamer.isStereoOutput
             self.message = self.speakerStreamer.isStereoOutput
-                ? "صوت الكمبيوتر يعمل الآن في الآيفون بالسماعتين العلوية والسفلية"
-                : "صوت الكمبيوتر يعمل الآن من السماعة السفلية فقط لأن مايك الآيفون مشغّل"
+                ? "Computer sound is playing on the iPhone's top and bottom speakers"
+                : "Computer sound is playing on the bottom speaker only, because the iPhone microphone is on"
         }
     }
 
     func power(_ action: String) async {
         await perform {
             try await self.client().power(action)
-            self.message = action == "restart" ? "جارٍ إعادة تشغيل الكمبيوتر…" : "جارٍ إيقاف تشغيل الكمبيوتر…"
+            self.message = action == "restart" ? "Restarting the computer…" : "Shutting down the computer…"
         }
     }
 
@@ -670,7 +670,7 @@ final class AppModel: ObservableObject {
         pendingCommand = nil
         await perform {
             let result = try await self.client().answerCommand(id: pending.id, approve: approve)
-            self.message = result.reply.isEmpty ? "تم" : result.reply
+            self.message = result.reply.isEmpty ? "Done" : result.reply
             if !result.files.isEmpty {
                 await self.fetchCommandFiles(result.files, reply: self.message)
             }

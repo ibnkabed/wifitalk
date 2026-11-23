@@ -9,23 +9,28 @@ Say "open Chrome and search for flights to Riyadh", "write a short thank-you ema
 
 The Windows side is a tiny companion: an icon beside the clock that does exactly what the phone says (type this, press these keys, move the mouse, open that program) and nothing else. It runs no AI and holds no keys.
 
-[العربية](README.ar.md)
-
 ## What it does
 
-- **Assistant:** speak or type a request. The phone turns it into plain actions and shows them as they run, with a label saying which engine understood it: **this iPhone** or **Gemini in the cloud**. Shutting down, restarting and sleeping the computer are confirmed on the phone first.
-- **Dictation:** speak, and your words are typed where the cursor is, in any app.
-- **Trackpad:** move, tap to click, two-finger tap to right-click, two fingers to scroll, long press to drag.
-- **Keyboard:** type on the iPhone in any language it has, Arabic included, and the text appears on the computer as you type. There are keys for Esc, Tab, the arrows, copy, paste, undo, switching apps and more.
-- **Controls:** volume, media, lock, sleep, restart and shut down.
-- **Hear the computer on the iPhone:** the computer's sound plays on the phone or its headphones.
-- **The iPhone as the computer's microphone:** your voice reaches every Windows app. This needs the free [VB-CABLE](https://vb-audio.com/Cable/) driver.
+Everything is on one screen of the iPhone app:
+
+- **Command:** tap it, say what you want, and tap again. The phone turns your words into plain actions and the computer carries them out. Long-press it to type the request instead. The line under the text box says which engine understood it: **on this iPhone** or **Gemini in the cloud**. Shutting down, restarting and sleeping the computer wait for your yes on the phone.
+- **Dictate:** speak, and your words are typed where the cursor is, in any app.
+  - The **AI** key next to it proofreads the text with the hybrid AI before it is typed. Switch it to **Apple** to type the words exactly as heard.
+  - The language key next to that chooses automatic, Arabic or English.
+- **Keyboard:** type in the box and every letter goes straight to the computer's active field, in any language the iPhone has. Below it are Esc, Tab, Ctrl, Shift, Alt and the arrow keys.
+- **Trackpad:** slide to move, tap to click, use two fingers to scroll and right-click, and long-press to drag.
+- **Clipboard:** copy the iPhone's clipboard to the computer, or get the computer's clipboard on the iPhone.
+- **Paste snippets:** saved texts typed into the computer with one tap.
+- **Files:** browse the computer's Downloads\WiFiTalk folder, fetch a file to the iPhone, or send a file, a photo or a camera shot to the computer.
+- **Microphone key:** the iPhone becomes the computer's microphone in every Windows app. This needs the free [VB-CABLE](https://vb-audio.com/Cable/) driver.
+- **Headphones key:** the computer's sound plays on the iPhone or its headphones.
+- **Restart and shut down**, with confirmation.
 
 ## How the hybrid AI works
 
 All AI calls are in [`ios/WiFiTalk/AI/FirebaseHybrid.swift`](ios/WiFiTalk/AI/FirebaseHybrid.swift), and the assistant's prompt is in [`ios/WiFiTalk/AI/Assistant.swift`](ios/WiFiTalk/AI/Assistant.swift).
 
-1. **Speech to text:** Apple's speech recognizer runs on the iPhone when it supports the language.
+1. **Speech to text:** Apple's speech recognizer runs on the iPhone itself when it supports the language.
 2. **Request to actions, on the device first:** the request is sent to the on-device model when three things are true:
    - Apple Intelligence is available on the phone.
    - The request is in a supported language.
@@ -33,8 +38,9 @@ All AI calls are in [`ios/WiFiTalk/AI/FirebaseHybrid.swift`](ios/WiFiTalk/AI/Fir
 
    The model answers with a small JSON plan.
 3. **Cloud fallback:** otherwise, or if the on-device model fails or returns something that isn't JSON, the same request goes to Gemini through Firebase AI Logic. The lighter Gemini model is tried first, and a second model takes over when the first is busy.
-4. **Checked before it runs:** the phone keeps only the known action types (open, text, keys, wait, power), within limits, and asks before power actions.
-5. **Firebase:**
+4. **Dictation proofreading** uses the same engine: a short sentence is corrected on the iPhone, and a longer one or another language goes to Gemini.
+5. **Checked before it runs:** the phone keeps only the known action types (open, text, keys, wait, power), within limits, and asks before power actions.
+6. **Firebase:**
    - **App Check** protects the AI calls.
    - **Remote Config** holds the cloud model names and an on-device switch.
 
@@ -77,8 +83,9 @@ There is one TCP connection on port 47821. Each frame is one byte of type, four 
 | Type | Direction | Payload |
 |---|---|---|
 | 1 | both | JSON |
-| 2 | phone → computer | The phone's microphone: PCM int16, mono, 48 kHz |
-| 3 | computer → phone | The computer's sound: PCM int16, stereo, with the rate announced in JSON |
+| 2 | phone → computer | The phone's microphone: float32, mono, 48 kHz |
+| 3 | computer → phone | The computer's sound: float32, stereo, 48 kHz |
+| 4 | both | A file being transferred, in pieces |
 
 The phone first sends `{"hello":{"pin":"123456"}}` (or a saved token), then actions such as:
 

@@ -6,13 +6,10 @@ $csc = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 $refs = '/r:System.dll', '/r:System.Core.dll', '/r:System.Drawing.dll', '/r:System.Windows.Forms.dll', '/r:System.Web.Extensions.dll'
 $src = Join-Path $here 'WiFiTalk.cs'
 $exe = Join-Path $here 'WiFiTalk.exe'
-$ico = Join-Path $here 'WiFiTalk.ico'
 $manifest = "/win32manifest:$(Join-Path $here 'WiFiTalk.manifest')"
+$icon = "/win32icon:$(Join-Path $here 'wifitalk.ico')"
+$tray = "/resource:$(Join-Path $here 'wifitalk-tray.ico'),WiFiTalk.tray.ico"
 
-# First pass draws the icon, second pass embeds it.
-& $csc /nologo /target:winexe /optimize+ /platform:anycpu $refs $manifest "/out:$exe" $src
-if ($LASTEXITCODE) { exit 1 }
-& $exe --make-icon $ico | Out-Null
-& $csc /nologo /target:winexe /optimize+ /platform:anycpu $refs $manifest "/win32icon:$ico" "/out:$exe" $src
+& $csc /nologo /target:winexe /optimize+ /platform:anycpu $refs $manifest $icon $tray "/out:$exe" $src
 if ($LASTEXITCODE) { exit 1 }
 'built: ' + $exe

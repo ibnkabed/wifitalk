@@ -35,12 +35,12 @@ private struct PairView: View {
                     .symbolRenderingMode(.palette)
                     .foregroundStyle(.cyan, .blue.opacity(0.35))
                 Text("WiFi Talk").font(.largeTitle.bold())
-                Text("مساعد الكمبيوتر ولوحته وصوته في تطبيق واحد")
+                Text("Your computer's assistant, keyboard and sound in one app")
                     .foregroundStyle(.secondary)
 
                 VStack(spacing: 12) {
                     TextField(
-                        "عنوان الكمبيوتر، مثال 192.168.1.20",
+                        "Computer address, e.g. 192.168.1.20",
                         text: Binding(
                             get: { model.address },
                             set: { model.address = normalizeAddressInput($0) }
@@ -57,7 +57,7 @@ private struct PairView: View {
                         .textFieldStyle(.roundedBorder)
                         .environment(\.layoutDirection, .leftToRight)
                     TextField(
-                        "رمز الاقتران — 6 أرقام",
+                        "Pairing PIN — 6 digits",
                         text: Binding(
                             get: { model.pin },
                             set: { model.pin = normalizePairingPIN($0) }
@@ -74,7 +74,7 @@ private struct PairView: View {
                     Button {
                         Task { await model.pair() }
                     } label: {
-                        Label("اتصال", systemImage: "link").frame(maxWidth: .infinity)
+                        Label("Connect", systemImage: "link").frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(model.address.isEmpty || model.pin.count != 6 || model.isBusy)
@@ -91,7 +91,7 @@ private struct PairView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("تم") { focusedField = nil }
+                    Button("Done") { focusedField = nil }
                 }
             }
         }
@@ -198,37 +198,37 @@ private struct KeyboardHomeView: View {
         )) {
             ShareSheet(urls: model.commandDownloads)
         }
-        .alert("موافق على هذا الأمر؟", isPresented: Binding(
+        .alert("Do this on the computer?", isPresented: Binding(
             get: { model.pendingCommand != nil },
             set: { if !$0 { model.pendingCommand = nil } }
         )) {
-            Button("نفّذ") { Task { await model.answerPendingCommand(approve: true) } }
-            Button("لا", role: .cancel) { Task { await model.answerPendingCommand(approve: false) } }
+            Button("Do it") { Task { await model.answerPendingCommand(approve: true) } }
+            Button("No", role: .cancel) { Task { await model.answerPendingCommand(approve: false) } }
         } message: {
             Text(model.pendingCommand?.text ?? "")
         }
-        .alert("اكتب أمرًا للكمبيوتر", isPresented: $showTypedCommand) {
-            TextField("مثال: افتح Chrome وابحث عن طقس الرياض", text: $typedCommand)
-            Button("نفّذ") {
+        .alert("Type a command for the computer", isPresented: $showTypedCommand) {
+            TextField("e.g. Open Chrome and search for the weather in Riyadh", text: $typedCommand)
+            Button("Do it") {
                 let text = typedCommand
                 typedCommand = ""
                 Task { await model.runTypedCommand(text) }
             }
-            Button("إلغاء", role: .cancel) { typedCommand = "" }
+            Button("Cancel", role: .cancel) { typedCommand = "" }
         } message: {
-            Text("يفهمه الذكاء الاصطناعي على الجوال ثم ينفّذه الكمبيوتر.")
+            Text("The AI on your iPhone understands it, then the computer carries it out.")
         }
-        .alert("إعادة تشغيل الكمبيوتر؟", isPresented: $showRestartConfirmation) {
-            Button("إلغاء", role: .cancel) {}
-            Button("إعادة التشغيل", role: .destructive) { Task { await model.power("restart") } }
+        .alert("Restart the computer?", isPresented: $showRestartConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Restart", role: .destructive) { Task { await model.power("restart") } }
         } message: {
-            Text("سيُعاد تشغيل كمبيوتر Windows فورًا.")
+            Text("The Windows computer will restart now.")
         }
-        .alert("إيقاف تشغيل الكمبيوتر؟", isPresented: $showShutdownConfirmation) {
-            Button("إلغاء", role: .cancel) {}
-            Button("إيقاف التشغيل", role: .destructive) { Task { await model.power("shutdown") } }
+        .alert("Shut down the computer?", isPresented: $showShutdownConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Shut down", role: .destructive) { Task { await model.power("shutdown") } }
         } message: {
-            Text("سيُغلق كمبيوتر Windows فورًا.")
+            Text("The Windows computer will shut down now.")
         }
     }
 
@@ -256,7 +256,7 @@ private struct KeyboardHomeView: View {
             ) {
                 Task { await model.reportConnection() }
             }
-            .accessibilityLabel("حالة الاتصال: \(model.connectionLabel)")
+            .accessibilityLabel("Connection: \(model.connectionLabel)")
             // saved texts typed into the computer without any model.
             HeaderButton(icon: "list.clipboard.fill", tint: .cyan) {
                 if filledSnippets.isEmpty {
@@ -265,7 +265,7 @@ private struct KeyboardHomeView: View {
                     showSnippets.toggle()
                 }
             }
-            .accessibilityLabel("نصوص اللصق")
+            .accessibilityLabel("Paste snippets")
             .popover(isPresented: $showSnippets, arrowEdge: .top) {
                 snippetList.presentationCompactAdaptation(.popover)
             }
@@ -328,7 +328,7 @@ private struct KeyboardHomeView: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
                 .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
-                .accessibilityLabel("تنظيف القالب فقط")
+                .accessibilityLabel("Clear this box only")
             }
             .padding(7)
         }
@@ -343,7 +343,7 @@ private struct KeyboardHomeView: View {
     /// machines, and this moves everything else.
     private func actionRow(compact: Bool) -> some View {
         HStack(spacing: compact ? 7 : 11) {
-            ActionButton(title: "نسخ إلى الكمبيوتر", icon: "doc.on.clipboard") {
+            ActionButton(title: "Copy to computer", icon: "doc.on.clipboard") {
                 Task { await model.copyPhoneClipboardToPC() }
             }
             Button {
@@ -357,9 +357,9 @@ private struct KeyboardHomeView: View {
             .foregroundStyle(.white)
             .background(Color.cyan.opacity(0.75), in: Circle())
             .overlay(Circle().stroke(Color.cyan, lineWidth: 1.5))
-            .accessibilityLabel("نقل الملفات")
+            .accessibilityLabel("Transfer files")
 
-            ActionButton(title: "جلب من الكمبيوتر", icon: "clipboard") {
+            ActionButton(title: "Get from computer", icon: "clipboard") {
                 Task { await model.copyPCClipboardToPhone() }
             }
         }
@@ -376,19 +376,19 @@ private struct KeyboardHomeView: View {
                 tint: providerKeyTint,
                 height: height
             ) { model.cycleTranscriptionProvider() }
-                .accessibilityLabel("خدمة النص الصوتي: \(model.transcriptionProvider.fullLabel)")
+                .accessibilityLabel("Dictation: \(model.transcriptionProvider.fullLabel)")
             OptionKey(
                 title: model.dictationLanguage.shortLabel,
                 tint: model.dictationLanguage == .automatic ? .cyan : .orange,
                 height: height
             ) { model.cycleDictationLanguage() }
-                .accessibilityLabel("لغة النص الصوتي: \(model.dictationLanguage.shortLabel)")
+                .accessibilityLabel("Dictation language: \(model.dictationLanguage.shortLabel)")
             commandButton(height: height)
             Button {
                 Task { await model.toggleRecording() }
             } label: {
                 Label(
-                    model.isRecording ? "إيقاف وإرسال" : "النص الصوتي",
+                    model.isRecording ? "Stop and send" : "Dictate",
                     systemImage: model.isRecording ? "stop.fill" : "waveform.badge.mic"
                 )
                 .font(.caption.bold())
@@ -429,7 +429,7 @@ private struct KeyboardHomeView: View {
                     Image(systemName: listening ? "stop.fill" : "command")
                         .font(.system(size: 13, weight: .bold))
                 }
-                Text(listening ? "تنفيذ" : "أمر")
+                Text(listening ? "Run" : "Command")
                     .font(.caption2.bold())
                     .lineLimit(1)
             }
@@ -449,7 +449,7 @@ private struct KeyboardHomeView: View {
         .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in
             if !listening && !working { showTypedCommand = true }
         })
-        .accessibilityLabel(listening ? "تنفيذ الأمر" : "أمر صوتي للكمبيوتر")
+        .accessibilityLabel(listening ? "Run the command" : "Voice command for the computer")
     }
 
     /// Red means the companion says this provider has no credentials, so the
@@ -469,7 +469,7 @@ private struct KeyboardHomeView: View {
     }
 
     private var statusLine: some View {
-        Text(model.message.isEmpty ? "الكتابة تنتقل مباشرة إلى الحقل النشط في الكمبيوتر" : model.message)
+        Text(model.message.isEmpty ? "What you type goes straight to the active field on the computer" : model.message)
             .font(.caption2)
             .foregroundStyle(.secondary)
             .lineLimit(2)
@@ -691,15 +691,15 @@ private struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("الاتصال") {
-                    LabeledContent("الكمبيوتر", value: model.address)
-                    LabeledContent("الحالة", value: model.connectionLabel)
-                    Button("نسيان الاقتران", role: .destructive) {
+                Section("Connection") {
+                    LabeledContent("Computer", value: model.address)
+                    LabeledContent("Status", value: model.connectionLabel)
+                    Button("Forget pairing", role: .destructive) {
                         model.forgetPairing()
                         dismiss()
                     }
                 }
-                Section("زر اللصق: نصوص جاهزة (\(model.pasteSnippets.count) من \(PasteSnippetStore.limit))") {
+                Section("Paste button: saved texts (\(model.pasteSnippets.count) of \(PasteSnippetStore.limit))") {
                     ForEach($model.pasteSnippets) { $snippet in
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
@@ -707,7 +707,7 @@ private struct SettingsView: View {
                                 // both fields for a password form, so a paste was
                                 // refused and only the last letter stayed (owner,
                                 // 2026-10-31). An explicit type stops that guess.
-                                TextField("العنوان", text: $snippet.title)
+                                TextField("Title", text: $snippet.title)
                                     .font(.body.bold())
                                     .textContentType(.oneTimeCode)
                                     .autocorrectionDisabled()
@@ -717,9 +717,9 @@ private struct SettingsView: View {
                                     Image(systemName: "trash")
                                 }
                                 .buttonStyle(.borderless)
-                                .accessibilityLabel("حذف الخانة")
+                                .accessibilityLabel("Delete")
                             }
-                            TextField("النص الذي يُلصق", text: $snippet.text, axis: .vertical)
+                            TextField("Text to paste", text: $snippet.text, axis: .vertical)
                                 .lineLimit(1...6)
                                 .font(.callout)
                                 .textContentType(.oneTimeCode)
@@ -732,26 +732,26 @@ private struct SettingsView: View {
                         Button {
                             model.pasteSnippets.append(PasteSnippet())
                         } label: {
-                            Label("إضافة خانة", systemImage: "plus")
+                            Label("Add a text", systemImage: "plus")
                         }
                     }
-                    Text("زر اللوح الفيروزي في الأعلى يعرض الخانات المعبّأة فقط، وبنقرة يُكتب نص الخانة في النافذة النشطة على الكمبيوتر دون أي نموذج ذكاء اصطناعي.")
+                    Text("The turquoise clipboard button at the top lists the filled texts; one tap types a text into the computer's active window, with no AI involved.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
                 BuiltInAISection()
                 Section {
-                    LabeledContent("مايك الكمبيوتر", value: model.computerMicDevice.isEmpty ? L("متوقف") : model.computerMicDevice)
-                    LabeledContent("سماعة الكمبيوتر", value: model.computerSpeakerDevice.isEmpty ? L("متوقفة") : model.computerSpeakerDevice)
+                    LabeledContent("Computer microphone", value: model.computerMicDevice.isEmpty ? L("Off") : model.computerMicDevice)
+                    LabeledContent("Computer sound", value: model.computerSpeakerDevice.isEmpty ? L("Off") : model.computerSpeakerDevice)
                 } header: {
-                    Text("الصوت")
+                    Text("Audio")
                 } footer: {
-                    Text("زر المايك يجعل الجوال ميكروفونًا للكمبيوتر، ويحتاج برنامج VB-CABLE المجاني عليه. وزر السماعة يُسمعك صوت الكمبيوتر في الجوال.")
+                    Text("The microphone key makes the iPhone the computer's microphone (it needs the free VB-CABLE driver there). The headphones key plays the computer's sound on the iPhone.")
                 }
                 AboutSection()
             }
             .navigationTitle("WiFiTalk")
-            .toolbar { Button("تم") { dismiss() } }
+            .toolbar { Button("Done") { dismiss() } }
         }
     }
 }

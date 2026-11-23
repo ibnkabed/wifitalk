@@ -55,7 +55,7 @@ struct TalkAPIClient: Sendable {
     func transcribe(fileURL: URL, language: DictationLanguage = .automatic,
                     provider: TranscriptionProvider = .fallback, inject: Bool = true) async throws -> TalkResult {
         let heard = try await SpeechText.transcribe(fileURL, language: language)
-        guard !heard.text.isEmpty else { throw WiFiTalkError.server("لم أسمع كلامًا واضحًا") }
+        guard !heard.text.isEmpty else { throw WiFiTalkError.server("I didn't hear any clear words") }
         var corrected = heard.text
         var warning: String?
         var corrector: String?
@@ -83,7 +83,7 @@ struct TalkAPIClient: Sendable {
     func runCommand(fileURL: URL, language: DictationLanguage = .automatic,
                     provider: TranscriptionProvider = .fallback) async throws -> CommandResult {
         let heard = try await SpeechText.transcribe(fileURL, language: language)
-        guard !heard.text.isEmpty else { throw WiFiTalkError.server("لم أسمع أمرًا واضحًا") }
+        guard !heard.text.isEmpty else { throw WiFiTalkError.server("I didn't hear a clear command") }
         return try await runCommand(text: heard.text)
     }
 
@@ -92,7 +92,7 @@ struct TalkAPIClient: Sendable {
         let plan = try await Assistant.plan(for: text)
         let engine = EngineLabel.current
         if plan.actions.isEmpty {
-            return CommandResult(ok: true, heard: text, reply: plan.say.isEmpty ? L("لم أفهم الأمر") : plan.say,
+            return CommandResult(ok: true, heard: text, reply: plan.say.isEmpty ? L("I didn't understand that") : plan.say,
                                  files: [], provider: engine, unlock: nil, pending: nil)
         }
         if plan.needsConfirmation {
@@ -103,20 +103,20 @@ struct TalkAPIClient: Sendable {
                                                          seconds: nil))
         }
         try await run(plan)
-        let reply = (plan.say.isEmpty ? L("تم") : plan.say) + " · " + engine
+        let reply = (plan.say.isEmpty ? L("Done") : plan.say) + " · " + engine
         return CommandResult(ok: true, heard: text, reply: reply, files: [], provider: engine, unlock: nil, pending: nil)
     }
 
     @MainActor
     func answerCommand(id: String, approve: Bool) async throws -> CommandResult {
         guard let plan = Hub.pending.removeValue(forKey: id) else {
-            return CommandResult(ok: false, heard: "", reply: L("انتهت صلاحية الأمر"), files: [], provider: nil, unlock: nil, pending: nil)
+            return CommandResult(ok: false, heard: "", reply: L("That command has expired"), files: [], provider: nil, unlock: nil, pending: nil)
         }
         guard approve else {
-            return CommandResult(ok: true, heard: "", reply: L("أُلغي الأمر"), files: [], provider: nil, unlock: nil, pending: nil)
+            return CommandResult(ok: true, heard: "", reply: L("Cancelled"), files: [], provider: nil, unlock: nil, pending: nil)
         }
         try await run(plan)
-        return CommandResult(ok: true, heard: "", reply: plan.say.isEmpty ? L("تم") : plan.say, files: [], provider: nil, unlock: nil, pending: nil)
+        return CommandResult(ok: true, heard: "", reply: plan.say.isEmpty ? L("Done") : plan.say, files: [], provider: nil, unlock: nil, pending: nil)
     }
 
     /// One action at a time, so a failure stops the rest.
@@ -255,7 +255,7 @@ struct TalkAPIClient: Sendable {
                                   sampleRate: 48_000, voiceProcessing: true)
         } catch {
             if error.localizedDescription == "no_virtual_cable" {
-                throw WiFiTalkError.server("لاستخدام الجوال مايكًا للكمبيوتر، ثبّت برنامج VB-CABLE المجاني على الكمبيوتر ثم أعد تشغيل WiFiTalk فيه")
+                throw WiFiTalkError.server("To use the iPhone as the computer's microphone, install the free VB-CABLE driver on the computer, then restart WiFiTalk there")
             }
             throw error
         }
@@ -322,8 +322,8 @@ enum Hub {
 enum EngineLabel {
     static var current: String {
         switch FirebaseHybrid.shared.lastEngine {
-        case .onDevice: return L("على هذا الجوال (نموذج Apple)")
-        case .cloud: return L("Gemini في السحابة (Firebase AI Logic)")
+        case .onDevice: return L("on this iPhone (Apple model)")
+        case .cloud: return L("Gemini in the cloud (Firebase AI Logic)")
         case nil: return ""
         }
     }
@@ -407,11 +407,11 @@ enum SpeechText {
             let ok = await withCheckedContinuation { c in
                 SFSpeechRecognizer.requestAuthorization { c.resume(returning: $0 == .authorized) }
             }
-            guard ok else { throw WiFiTalkError.server("اسمح لـ WiFiTalk بالتعرّف على الكلام من إعدادات الجوال") }
+            guard ok else { throw WiFiTalkError.server("Allow Speech Recognition for WiFiTalk in Settings") }
         }
         let loc = locale(for: language)
         guard let recognizer = SFSpeechRecognizer(locale: loc), recognizer.isAvailable else {
-            throw WiFiTalkError.server("التعرّف على الكلام غير متاح لهذه اللغة الآن")
+            throw WiFiTalkError.server("Speech recognition isn't available for this language right now")
         }
         let request = SFSpeechURLRecognitionRequest(url: url)
         let onDevice = recognizer.supportsOnDeviceRecognition

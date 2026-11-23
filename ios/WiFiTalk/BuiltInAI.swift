@@ -6,17 +6,17 @@ struct BuiltInAISection: View {
 
     var body: some View {
         Section {
-            Label(hybrid.isConfigured ? L("جاهز بلا مفتاح: Gemini عبر Firebase AI Logic") : L("غير متاح في هذه النسخة"),
+            Label(hybrid.isConfigured ? L("Ready with no key: Gemini through Firebase AI Logic") : L("Not available in this build"),
                   systemImage: hybrid.isConfigured ? "checkmark.seal.fill" : "xmark.seal")
                 .foregroundColor(hybrid.isConfigured ? .green : .secondary)
-            LabeledContent("نموذج Apple على هذا الجوال", value: hybrid.onDeviceReady ? L("متاح") : L("غير متاح هنا"))
+            LabeledContent("Apple's model on this iPhone", value: hybrid.onDeviceReady ? L("Available") : L("Not available here"))
             if let engine = hybrid.lastEngine {
-                LabeledContent("آخر طلب", value: engine == .onDevice ? L("على هذا الجوال") : L("في السحابة"))
+                LabeledContent("Last request", value: engine == .onDevice ? L("On this iPhone") : L("In the cloud"))
             }
         } header: {
-            Text("الذكاء الاصطناعي المدمج")
+            Text("Built-in AI")
         } footer: {
-            Text("زر الأوامر يفهم ما تقوله ثم يحوّله إلى أوامر ينفّذها الكمبيوتر، وزر «AI» بجانب النص الصوتي يصحّح ما أمليته قبل كتابته. الطلب القصير بلغة يدعمها نموذج Apple على الجهاز، كالإنجليزية، يُفهم على الجوال نفسه بخصوصية وبلا إنترنت. وما سواه، كالعربية والكتابة الطويلة، يفهمه Gemini في السحابة عبر Firebase AI Logic. والكمبيوتر ينفّذ فقط، ولا يشغّل أي ذكاء اصطناعي.")
+            Text("The Command button understands what you say and turns it into actions the computer carries out; the “AI” key next to Dictate proofreads what you dictated before it is typed. A short request in a language Apple's on-device model supports, such as English, is understood on this iPhone: private, free and offline. Anything else, such as other languages or long writing, is understood by Gemini in the cloud through Firebase AI Logic. The computer only carries out actions; it runs no AI.")
         }
     }
 }
@@ -24,11 +24,11 @@ struct BuiltInAISection: View {
 /// What the app is, its source, and the copyright line.
 struct AboutSection: View {
     var body: some View {
-        Section("عن التطبيق") {
-            Text("WiFiTalk يجعل الآيفون مساعدًا ذكيًا لكمبيوتر Windows، ولوحة مفاتيح ولوحة لمس وميكروفونًا وسماعة له، عبر الواي فاي.")
+        Section("About") {
+            Text("WiFiTalk turns your iPhone into your Windows computer's AI assistant, keyboard, trackpad, microphone and speaker, over your Wi-Fi.")
                 .font(.callout)
             Link(destination: URL(string: "https://github.com/ibnkabed/wifitalk")!) {
-                Label("الكود المصدري وبرنامج الكمبيوتر", systemImage: "chevron.left.forwardslash.chevron.right")
+                Label("Source code and the Windows companion", systemImage: "chevron.left.forwardslash.chevron.right")
             }
             Text("Copyright (c) 2026 IbnKabed")
                 .font(.caption)

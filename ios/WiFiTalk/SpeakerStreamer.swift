@@ -187,7 +187,7 @@ final class SpeakerStreamer {
             if hostEngine == nil {
                 try? audioSession.setActive(false, options: .notifyOthersOnDeactivation)
             }
-            throw WiFiTalkError.server("صيغة صوت الكمبيوتر غير مدعومة")
+            throw WiFiTalkError.server("The computer's sound format isn't supported")
         }
 
         isHosted = hostEngine != nil

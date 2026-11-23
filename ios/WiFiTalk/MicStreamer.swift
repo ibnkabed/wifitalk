@@ -46,16 +46,16 @@ final class MicStreamer: ObservableObject {
         case .granted:
             return
         case .denied:
-            throw WiFiTalkError.server("إذن الميكروفون مرفوض. فعّله من إعدادات الآيفون ← الخصوصية والأمان ← الميكروفون ← WiFi Talk")
+            throw WiFiTalkError.server("Microphone access is off. Turn it on in Settings › Privacy & Security › Microphone › WiFiTalk")
         case .undetermined:
             let granted = await withCheckedContinuation { continuation in
                 session.requestRecordPermission { continuation.resume(returning: $0) }
             }
             if !granted {
-                throw WiFiTalkError.server("لم يُمنح WiFi Talk إذن استخدام الميكروفون")
+                throw WiFiTalkError.server("WiFiTalk wasn't allowed to use the microphone")
             }
         @unknown default:
-            throw WiFiTalkError.server("تعذر التحقق من إذن الميكروفون")
+            throw WiFiTalkError.server("Couldn't check microphone access")
         }
     }
 
@@ -99,7 +99,7 @@ final class MicStreamer: ObservableObject {
         guard Int(format.sampleRate.rounded()) == 48_000 else {
             try? input.setVoiceProcessingEnabled(false)
             try? session.setActive(false, options: .notifyOthersOnDeactivation)
-            throw WiFiTalkError.server("صيغة مايك الآيفون الحالية ليست 48 kHz. افصل سماعة البلوتوث ثم حاول مجددًا")
+            throw WiFiTalkError.server("The iPhone microphone isn't running at 48 kHz. Disconnect Bluetooth headphones and try again")
         }
 
         // 960 frames is 20 ms at 48 kHz, which is both the IO buffer asked for
@@ -127,7 +127,7 @@ final class MicStreamer: ObservableObject {
             let started = try await client.startMic(sampleRate: 48_000, voiceProcessing: true)
             remoteStarted = true
             guard started.voiceProcessing == true else {
-                throw WiFiTalkError.server("حدّث برنامج WiFi Talk على الكمبيوتر قبل تشغيل معالجة الكلام الجديدة")
+                throw WiFiTalkError.server("Update WiFiTalk on the computer first")
             }
             deviceName = started.device
             self.client = client
@@ -149,7 +149,7 @@ final class MicStreamer: ObservableObject {
         guard client != nil else { return }
         if pendingChunks.count >= maximumPendingChunks {
             pendingChunks.removeFirst()
-            statusHandler?("الميكروفون ما زال يعمل، لكن الاتصال متأخر؛ سأواصل إعادة الاتصال", false)
+            statusHandler?("The microphone is still on, but the connection is behind; reconnecting", false)
         }
         pendingChunks.append(data)
         guard senderTask == nil else { return }
@@ -186,7 +186,7 @@ final class MicStreamer: ObservableObject {
                     sentSampleCount = sampleOffset + sampleCount
                     if failures > 0 {
                         lastError = ""
-                        statusHandler?("عاد اتصال الميكروفون بالكمبيوتر، والميكروفون مستمر", true)
+                        statusHandler?("The microphone is connected to the computer again", true)
                     }
                     // Nothing is slept here on purpose. A backlog used to pause
                     // the sender for 125 ms, which is six new 20 ms taps
@@ -200,7 +200,7 @@ final class MicStreamer: ObservableObject {
                     guard !Task.isCancelled else { break }
                     lastError = error.localizedDescription
                     failures += 1
-                    statusHandler?("الميكروفون ما زال يعمل؛ أعيد الاتصال بالكمبيوتر: \(lastError)", false)
+                    statusHandler?("The microphone is still on; reconnecting to the computer: \(lastError)", false)
                     if manualStopRequested { break }
                     if failures.isMultiple(of: 3) {
                         do {
@@ -209,7 +209,7 @@ final class MicStreamer: ObservableObject {
                                 voiceProcessing: true
                             )
                             guard started.voiceProcessing == true else {
-                                throw WiFiTalkError.server("برنامج الكمبيوتر لا يدعم معالجة الكلام الحالية")
+                                throw WiFiTalkError.server("The computer's WiFiTalk doesn't support this microphone mode")
                             }
                             deviceName = started.device
                             nextSequence = 0

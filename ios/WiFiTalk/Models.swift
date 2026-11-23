@@ -121,8 +121,8 @@ enum DictationLanguage: String, CaseIterable, Identifiable, Sendable {
 
     var shortLabel: String {
         switch self {
-        case .automatic: return "تلقائي"
-        case .arabic: return "عربي"
+        case .automatic: return "Auto"
+        case .arabic: return "AR"
         case .english: return "EN"
         }
     }
@@ -203,8 +203,8 @@ struct RemoteFile: Decodable, Identifiable, Hashable {
     }
 
     var sizeLabel: String {
-        if isDirectory { return "مجلد" }
-        let units = ["بايت", "KB", "MB", "GB"]
+        if isDirectory { return "Folder" }
+        let units = ["bytes", "KB", "MB", "GB"]
         var value = Double(size)
         var index = 0
         while value >= 1024, index < units.count - 1 {
@@ -218,7 +218,7 @@ struct RemoteFile: Decodable, Identifiable, Hashable {
 
     var modifiedLabel: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ar")
+        formatter.locale = Locale(identifier: "en_US")
         formatter.dateFormat = "d MMM · HH:mm"
         return formatter.string(from: Date(timeIntervalSince1970: modified))
     }
@@ -331,10 +331,10 @@ enum WiFiTalkError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidAddress: return "عنوان الكمبيوتر غير صحيح"
-        case .notPaired: return "اربط التطبيق بالكمبيوتر أولاً"
+        case .invalidAddress: return "The computer address isn't valid"
+        case .notPaired: return "Pair with the computer first"
         case .server(let message): return message
-        case .invalidResponse: return "وصل رد غير مفهوم من الكمبيوتر"
+        case .invalidResponse: return "The computer sent an unexpected answer"
         }
     }
 }

@@ -13,16 +13,16 @@ final class AudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate {
         case .granted:
             return
         case .denied:
-            throw WiFiTalkError.server("إذن الميكروفون مرفوض. فعّله من إعدادات الآيفون ← الخصوصية والأمان ← الميكروفون ← WiFi Talk")
+            throw WiFiTalkError.server("Microphone access is off. Turn it on in Settings › Privacy & Security › Microphone › WiFiTalk")
         case .undetermined:
             let granted = await withCheckedContinuation { continuation in
                 session.requestRecordPermission { continuation.resume(returning: $0) }
             }
             if !granted {
-                throw WiFiTalkError.server("لم يُمنح WiFi Talk إذن استخدام الميكروفون")
+                throw WiFiTalkError.server("WiFiTalk wasn't allowed to use the microphone")
             }
         @unknown default:
-            throw WiFiTalkError.server("تعذر التحقق من إذن الميكروفون")
+            throw WiFiTalkError.server("Couldn't check microphone access")
         }
     }
 
@@ -68,9 +68,9 @@ final class AudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate {
             if !sharedWithStream {
                 try? session.setActive(false, options: .notifyOthersOnDeactivation)
             }
-            throw WiFiTalkError.server("تعذر تجهيز ملف التسجيل الصوتي")
+            throw WiFiTalkError.server("Couldn't prepare the recording")
         }
-        guard value.record() else { throw WiFiTalkError.server("تعذر بدء التسجيل") }
+        guard value.record() else { throw WiFiTalkError.server("Couldn't start recording") }
         recorder = value
         fileURL = url
         isRecording = true

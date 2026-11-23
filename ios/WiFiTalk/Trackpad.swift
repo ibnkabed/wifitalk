@@ -30,7 +30,7 @@ struct TrackpadView: View {
             VStack(spacing: 7) {
                 Image(systemName: "cursorarrow.motionlines")
                     .font(.system(size: 25, weight: .light))
-                Text("مرّر للتحريك · لمسة = نقر · إصبعان = تمرير ونقر يمين")
+                Text("Slide to move · tap = click · two fingers = scroll and right-click")
                     .font(.caption2)
                     .multilineTextAlignment(.center)
             }
@@ -45,8 +45,8 @@ struct TrackpadView: View {
             )
         }
         .animation(.easeOut(duration: 0.12), value: isTouching)
-        .accessibilityLabel("لوحة تحكم الماوس")
-        .accessibilityHint("مرّر بإصبع لتحريك المؤشر، والمس للنقر، وبإصبعين للتمرير")
+        .accessibilityLabel("Trackpad")
+        .accessibilityHint("Slide one finger to move the pointer, tap to click, use two fingers to scroll")
     }
 }
 

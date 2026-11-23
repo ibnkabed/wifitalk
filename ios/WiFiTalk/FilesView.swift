@@ -33,7 +33,7 @@ final class FileBrowser: ObservableObject {
     var entries: [RemoteFile] { listing?.entries ?? [] }
     var folderName: String {
         let current = path
-        if current.isEmpty { return "مجلد الإرسال" }
+        if current.isEmpty { return "Shared folder" }
         return current.split(separator: "/").last.map(String.init) ?? current
     }
     var canGoUp: Bool { !path.isEmpty }
@@ -64,7 +64,7 @@ final class FileBrowser: ObservableObject {
     /// iOS lets it be saved into Files or the photo library.
     func download(_ entry: RemoteFile) async {
         guard let model, !entry.isDirectory else { return }
-        transfer = (label: "جلب \(entry.name)", fraction: 0)
+        transfer = (label: "Fetching \(entry.name)", fraction: 0)
         defer { transfer = nil }
         do {
             let directory = FileManager.default.temporaryDirectory
@@ -78,7 +78,7 @@ final class FileBrowser: ObservableObject {
                 }
             }
             downloaded = url
-            report("جاهز: \(entry.name)")
+            report("Ready: \(entry.name)")
         } catch {
             report(error.localizedDescription, failed: true)
         }
@@ -89,7 +89,7 @@ final class FileBrowser: ObservableObject {
         guard let model else { return }
         let opened = securityScoped && url.startAccessingSecurityScopedResource()
         defer { if opened { url.stopAccessingSecurityScopedResource() } }
-        transfer = (label: "إرسال \(name)", fraction: 0)
+        transfer = (label: "Sending \(name)", fraction: 0)
         defer { transfer = nil }
         do {
             let result = try await model.transferClient().uploadFile(
@@ -101,7 +101,7 @@ final class FileBrowser: ObservableObject {
                 }
             }
             await load(quietly: true)
-            report("وصل إلى الكمبيوتر: \(result.name)")
+            report("On the computer: \(result.name)")
         } catch {
             report(error.localizedDescription, failed: true)
         }
@@ -174,11 +174,11 @@ struct FilesView: View {
                     sendBar
                 }
             }
-            .navigationTitle("نقل الملفات")
+            .navigationTitle("Transfer files")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("تم") { dismiss() }
+                    Button("Done") { dismiss() }
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -267,10 +267,10 @@ struct FilesView: View {
                 Image(systemName: "tray")
                     .font(.system(size: 44))
                     .foregroundStyle(.secondary)
-                Text("لا شيء هنا بعد")
+                Text("Nothing here yet")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text("الصق أي ملف في مجلد الإرسال على الكمبيوتر، أو أرسل من الجوال بالزر بالأسفل.")
+                Text("Put any file in Downloads\\WiFiTalk on the computer, or send one from the iPhone with the buttons below.")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -324,11 +324,11 @@ struct FilesView: View {
     /// hide the camera behind a press and a read.
     private var sendBar: some View {
         HStack(spacing: 8) {
-            SendButton(title: "ملف", icon: "doc") { showFileImporter = true }
-            SendButton(title: "من الاستوديو", icon: "photo.on.rectangle") {
+            SendButton(title: "File", icon: "doc") { showFileImporter = true }
+            SendButton(title: "Photos", icon: "photo.on.rectangle") {
                 showPhotoPicker = true
             }
-            SendButton(title: "التقاط صورة", icon: "camera") { showCamera = true }
+            SendButton(title: "Camera", icon: "camera") { showCamera = true }
                 .disabled(!UIImagePickerController.isSourceTypeAvailable(.camera))
         }
         .padding(.horizontal, 10)

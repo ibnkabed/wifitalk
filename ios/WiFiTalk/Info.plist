@@ -3,12 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>ar</string>
-	<key>CFBundleLocalizations</key>
-	<array>
-		<string>ar</string>
-		<string>en</string>
-	</array>
+	<string>en</string>
 	<key>AppCheckDebugToken</key>
 	<string>$(APP_CHECK_DEBUG_TOKEN)</string>
 	<key>CFBundleDisplayName</key>
@@ -30,15 +25,15 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>يتصل WiFiTalk ببرنامجه على الكمبيوتر عبر شبكة الواي فاي المحلية.</string>
+	<string>WiFiTalk connects to its companion on your computer over your Wi-Fi.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>يستمع WiFiTalk إلى أوامرك وإملائك، ويمكنه إرسال صوتك إلى الكمبيوتر ميكروفونًا.</string>
+	<string>WiFiTalk listens to your commands and dictation, and can send your voice to the computer as a microphone.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>يحوّل WiFiTalk كلامك إلى نص، على هذا الجوال حين يستطيع.</string>
+	<string>WiFiTalk turns what you say into text, on this iPhone when it can.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>يستخدم WiFiTalk الكاميرا لالتقاط صورة وإرسالها إلى الكمبيوتر مباشرة.</string>
+	<string>WiFiTalk uses the camera to take a photo and send it straight to the computer.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>يحفظ WiFiTalk الصور التي تجلبها من الكمبيوتر في ألبوم الصور عند اختيارك ذلك.</string>
+	<string>WiFiTalk saves photos you fetch from the computer to your library when you choose to.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

@@ -48,7 +48,6 @@ namespace WiFiTalk
         [STAThread]
         static int Main(string[] args)
         {
-            if (args.Length == 2 && args[0] == "--make-icon") { Art.WriteIco(args[1]); return 0; }
             bool first;
             using (var mutex = new Mutex(true, "IbnKabed.WiFiTalk.Companion", out first))
             {
@@ -61,13 +60,6 @@ namespace WiFiTalk
         }
     }
 
-    // ---------------------------------------------------------------- texts (English, or Arabic on an Arabic Windows)
-
-    static class T
-    {
-        static readonly bool Ar = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
-        public static string S(string en, string ar) { return Ar ? ar : en; }
-    }
 
     // ---------------------------------------------------------------- settings: the PIN and the paired phones
 
@@ -148,7 +140,7 @@ namespace WiFiTalk
             try { server.Start(); }
             catch (Exception ex)
             {
-                MessageBox.Show(T.S("WiFiTalk could not listen on port ", "تعذّر على WiFiTalk الاستماع على المنفذ ") + Program.Port + ":\n" + ex.Message,
+                MessageBox.Show("WiFiTalk could not listen on port " + Program.Port + ":\n" + ex.Message,
                     "WiFiTalk", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             if (store.PhoneCount == 0) ShowInfo();
@@ -159,8 +151,8 @@ namespace WiFiTalk
             var old = icon.Icon;
             icon.Icon = Art.TrayIcon(phones > 0);
             if (old != null) old.Dispose();
-            string text = phones > 0 ? T.S("WiFiTalk: iPhone connected", "WiFiTalk: الجوال متصل")
-                                     : T.S("WiFiTalk: waiting for the iPhone", "WiFiTalk: بانتظار الجوال");
+            string text = phones > 0 ? "WiFiTalk: iPhone connected"
+                                     : "WiFiTalk: waiting for the iPhone";
             icon.Text = text.Length > 63 ? text.Substring(0, 63) : text;
             if (info != null && !info.IsDisposed) info.Fill(store, phones);
         }
@@ -169,19 +161,19 @@ namespace WiFiTalk
         {
             var m = icon.ContextMenuStrip;
             m.Items.Clear();
-            m.Items.Add(T.S("Address and PIN…", "العنوان والرمز…"), null, (s, e) => ShowInfo());
-            var start = new ToolStripMenuItem(T.S("Start with Windows", "يبدأ مع Windows")) { Checked = StartsWithWindows() };
+            m.Items.Add("Address and PIN…", null, (s, e) => ShowInfo());
+            var start = new ToolStripMenuItem("Start with Windows") { Checked = StartsWithWindows() };
             start.Click += (s, e) => SetStartWithWindows(!start.Checked);
             m.Items.Add(start);
-            m.Items.Add(T.S("Unpair all phones (new PIN)", "إلغاء اقتران الجوالات (رمز جديد)"), null, (s, e) =>
+            m.Items.Add("Unpair all phones (new PIN)", null, (s, e) =>
             {
-                if (Ask(T.S("Unpair every phone and make a new PIN?", "هل تريد إلغاء اقتران كل الجوالات وإنشاء رمز جديد؟")))
+                if (Ask("Unpair every phone and make a new PIN?"))
                 { store.Reset(); server.DropAll(); Refresh(); ShowInfo(); }
             });
             m.Items.Add(new ToolStripSeparator());
-            m.Items.Add(T.S("Close WiFiTalk", "إغلاق WiFiTalk"), null, (s, e) =>
+            m.Items.Add("Close WiFiTalk", null, (s, e) =>
             {
-                if (Ask(T.S("Close WiFiTalk?", "هل تريد إغلاق WiFiTalk؟"))) Quit();
+                if (Ask("Close WiFiTalk?")) Quit();
             });
         }
 
@@ -249,14 +241,14 @@ namespace WiFiTalk
         public void Fill(Store store, int phones)
         {
             var sb = new StringBuilder();
-            sb.AppendLine(T.S("Open WiFiTalk on your iPhone (same Wi-Fi) and enter:", "افتح WiFiTalk في الجوال (على نفس الواي فاي) وأدخل:"));
+            sb.AppendLine("Open WiFiTalk on your iPhone (same Wi-Fi) and enter:");
             sb.AppendLine();
-            sb.AppendLine(T.S("Address:  ", "العنوان:  ") + string.Join("   or   ", Net.Addresses()));
-            sb.AppendLine(T.S("PIN:  ", "الرمز:  ") + store.Pin);
+            sb.AppendLine("Address:  " + string.Join("   or   ", Net.Addresses()));
+            sb.AppendLine("PIN:  " + store.Pin);
             sb.AppendLine();
-            sb.AppendLine(phones > 0 ? T.S("● iPhone connected", "● الجوال متصل")
-                                     : T.S("○ Waiting for the iPhone", "○ بانتظار الجوال"));
-            sb.AppendLine(T.S("Paired phones: ", "الجوالات المقترنة: ") + store.PhoneCount);
+            sb.AppendLine(phones > 0 ? "● iPhone connected"
+                                     : "○ Waiting for the iPhone");
+            sb.AppendLine("Paired phones: " + store.PhoneCount);
             body.Text = sb.ToString();
         }
     }
@@ -1130,100 +1122,36 @@ namespace WiFiTalk
         [DllImport("winmm.dll")] public static extern int waveOutClose(IntPtr h);
     }
 
-    // ---------------------------------------------------------------- the icon, drawn in code
+    // ---------------------------------------------------------------- the icon beside the clock
 
     static class Art
     {
-        /// A white phone with Wi-Fi waves; a green dot while the iPhone is connected.
-        public static Bitmap Draw(int size, bool connected)
-        {
-            var bmp = new Bitmap(size, size, PixelFormat.Format32bppArgb);
-            using (var g = Graphics.FromImage(bmp))
-            {
-                g.SmoothingMode = SmoothingMode.AntiAlias;
-                g.Clear(Color.Transparent);
-                float s = size / 48f;
-                float w = Math.Max(1.5f, 3.2f * s);
-                using (var pen = new Pen(Color.White, w) { LineJoin = LineJoin.Round, StartCap = LineCap.Round, EndCap = LineCap.Round })
-                {
-                    // phone body
-                    var body = new RectangleF(13 * s, 15 * s, 18 * s, 29 * s);
-                    using (var path = Rounded(body, 4 * s)) g.DrawPath(pen, path);
-                    g.FillEllipse(Brushes.White, 20.5f * s, 37.5f * s, 3 * s, 3 * s);
-                    // Wi-Fi waves from the phone's top right
-                    g.DrawArc(pen, 26 * s, 6 * s, 14 * s, 14 * s, -90, 90);
-                    g.DrawArc(pen, 24 * s, -2 * s, 24 * s, 24 * s, -90, 90);
-                }
-                if (connected)
-                {
-                    float d = 15 * s;
-                    g.FillEllipse(Brushes.Black, size - d - 1 * s, size - d - 1 * s, d + 2 * s, d + 2 * s);
-                    using (var b = new SolidBrush(Color.FromArgb(52, 199, 89))) g.FillEllipse(b, size - d, size - d, d, d);
-                }
-            }
-            return bmp;
-        }
-
-        static GraphicsPath Rounded(RectangleF r, float rad)
-        {
-            var p = new GraphicsPath();
-            float d = rad * 2;
-            p.AddArc(r.X, r.Y, d, d, 180, 90);
-            p.AddArc(r.Right - d, r.Y, d, d, 270, 90);
-            p.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
-            p.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
-            p.CloseFigure();
-            return p;
-        }
-
-        /// The tray icon at the size Windows shows (48 px on a 300% screen; the manifest declares DPI awareness).
+        /// WiFi Talk's white tray icon (embedded), at the size Windows shows (48 px on a 300% screen: the manifest
+        /// declares DPI awareness), with a green dot while the iPhone is connected.
         public static Icon TrayIcon(bool connected)
         {
             int size = Math.Max(16, SystemInformation.SmallIconSize.Width);
-            using (var bmp = Draw(size, connected))
+            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("WiFiTalk.tray.ico"))
+            using (var source = new Icon(stream, size, size))
+            using (var bmp = new Bitmap(size, size, PixelFormat.Format32bppArgb))
             {
+                using (var g = Graphics.FromImage(bmp))
+                {
+                    g.SmoothingMode = SmoothingMode.AntiAlias;
+                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    g.Clear(Color.Transparent);
+                    g.DrawIcon(source, new Rectangle(0, 0, size, size));
+                    if (connected)
+                    {
+                        float d = size * 0.34f;
+                        using (var ring = new SolidBrush(Color.FromArgb(32, 32, 32))) g.FillEllipse(ring, size - d - size * 0.04f, size - d - size * 0.04f, d + size * 0.08f, d + size * 0.08f);
+                        using (var b = new SolidBrush(Color.FromArgb(52, 199, 89))) g.FillEllipse(b, size - d, size - d, d, d);
+                    }
+                }
                 var h = bmp.GetHicon();
                 var icon = (Icon)Icon.FromHandle(h).Clone();
                 Native.DestroyIcon(h);
                 return icon;
-            }
-        }
-
-        /// The program's .ico: sizes 16 to 256, 32-bit PNG frames, planes = 1. The program icon has a dark
-        /// rounded square behind the white drawing, so it shows on light backgrounds too.
-        public static void WriteIco(string path)
-        {
-            int[] sizes = { 16, 20, 24, 32, 40, 48, 64, 96, 128, 256 };
-            var pngs = new List<byte[]>();
-            foreach (int sz in sizes)
-            {
-                using (var bmp = new Bitmap(sz, sz, PixelFormat.Format32bppArgb))
-                using (var g = Graphics.FromImage(bmp))
-                {
-                    g.SmoothingMode = SmoothingMode.AntiAlias;
-                    using (var bg = new LinearGradientBrush(new Rectangle(0, 0, sz, sz), Color.FromArgb(10, 132, 255), Color.FromArgb(94, 92, 230), 45f))
-                    using (var square = Rounded(new RectangleF(0, 0, sz, sz), sz * 0.22f))
-                        g.FillPath(bg, square);
-                    using (var art = Draw(sz, false)) g.DrawImage(art, 0, 0, sz, sz);
-                    using (var ms = new MemoryStream()) { bmp.Save(ms, ImageFormat.Png); pngs.Add(ms.ToArray()); }
-                }
-            }
-            using (var f = new BinaryWriter(File.Create(path)))
-            {
-                f.Write((ushort)0); f.Write((ushort)1); f.Write((ushort)sizes.Length);
-                int offset = 6 + 16 * sizes.Length;
-                for (int i = 0; i < sizes.Length; i++)
-                {
-                    f.Write((byte)(sizes[i] >= 256 ? 0 : sizes[i]));
-                    f.Write((byte)(sizes[i] >= 256 ? 0 : sizes[i]));
-                    f.Write((byte)0); f.Write((byte)0);
-                    f.Write((ushort)1);    // planes
-                    f.Write((ushort)32);   // bits per pixel
-                    f.Write((uint)pngs[i].Length);
-                    f.Write((uint)offset);
-                    offset += pngs[i].Length;
-                }
-                foreach (var p in pngs) f.Write(p);
             }
         }
     }
