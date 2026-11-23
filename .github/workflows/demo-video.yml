@@ -1,0 +1,105 @@
+# Footage for the #BuildHybridAI demo video: the real app in the iOS simulator runs DemoTour (one unhurried pass
+# over every control) against the stand-in computer (tests/mock_companion.py), with live Firebase AI Logic calls.
+# The recording, the time it started, and the mock's timed log of scene marks and received actions come back as
+# the artifact `demo-footage`; the video is cut and narrated from them on the owner's PC (exports/video-tool).
+name: Demo video footage
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ui-test:
+    runs-on: xcode-27
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Add the Firebase config from the repository secret
+        env:
+          PLIST_B64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_B64 }}
+        run: |
+          set -euo pipefail
+          echo "$PLIST_B64" | base64 --decode > ios/WiFiTalk/GoogleService-Info.plist
+          plutil -lint ios/WiFiTalk/GoogleService-Info.plist
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Make the spoken test recordings
+        run: |
+          set -euo pipefail
+          mkdir -p audio out
+          say -o audio/command.wav --file-format=WAVE --data-format=LEI16@16000 "Open Notepad and write hello world"
+          say -o audio/dictation.wav --file-format=WAVE --data-format=LEI16@16000 "Hi team, the report is ready and I will send it this afternoon"
+          ls -l audio
+
+      - name: Start the stand-in computer
+        run: |
+          nohup python3 tests/mock_companion.py --audio "$PWD/audio" > out/mock.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:47822/stats && exit 0; sleep 1; done
+          cat out/mock.log; exit 1
+
+      - name: Pick and boot an iPhone simulator
+        run: |
+          set -euo pipefail
+          udid=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devs = [d for rt, ds in json.load(sys.stdin)["devices"].items() if "iOS" in rt for d in ds]
+          pro = [d for d in devs if "Pro Max" not in d["name"] and "Pro" in d["name"] and d["name"].startswith("iPhone")]
+          print((pro or [d for d in devs if d["name"].startswith("iPhone")])[-1]["udid"])')
+          echo "UDID=$udid" >> "$GITHUB_ENV"
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          xcrun simctl status_bar "$udid" override --time "9:41" --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
+          xcrun simctl ui "$udid" appearance dark
+
+      - name: Build for testing
+        env:
+          APP_CHECK_DEBUG_TOKEN: ${{ secrets.APP_CHECK_DEBUG_TOKEN }}
+        run: |
+          set -euo pipefail
+          xcodebuild build-for-testing \
+            -project ios/WiFiTalk.xcodeproj -scheme WiFiTalk -configuration Debug \
+            -destination "id=$UDID" -derivedDataPath ios/build \
+            CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= \
+            APP_CHECK_DEBUG_TOKEN="$APP_CHECK_DEBUG_TOKEN" | tail -5
+
+      - name: Record the demo tour
+        run: |
+          set +e
+          xcrun simctl io "$UDID" recordVideo --codec=h264 --force out/demo.mov 2> out/rec.log &
+          rec=$!
+          for i in $(seq 1 100); do grep -q "Recording started" out/rec.log && break; sleep 0.1; done
+          python3 -c 'import time; print("%.3f" % time.time())' > out/rec-start.txt
+          cat out/rec.log
+          xcodebuild test-without-building \
+            -project ios/WiFiTalk.xcodeproj -scheme WiFiTalk \
+            -destination "id=$UDID" -derivedDataPath ios/build \
+            -only-testing:WiFiTalkUITests/DemoTour \
+            -resultBundlePath out/results.xcresult > out/test.log 2>&1
+          code=$?
+          sleep 1
+          kill -INT "$rec"; wait "$rec"
+          grep -E "Test Case .*(passed|failed)|error:|DEMO MARK" out/test.log | sed 's/^.*Test Case/Test Case/' | head -60
+          grep -E "^(AT|MARK) " out/mock.log > out/timeline.txt
+          cat out/timeline.txt | cut -c1-160
+          exit $code
+
+      - name: Upload the video and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-footage
+          path: |
+            out/demo.mov
+            out/rec-start.txt
+            out/timeline.txt
+            out/test.log
+            out/mock.log

@@ -79,6 +79,7 @@ jobs:
           xcodebuild test-without-building \
             -project ios/WiFiTalk.xcodeproj -scheme WiFiTalk \
             -destination "id=$UDID" -derivedDataPath ios/build \
+            -skip-testing:WiFiTalkUITests/DemoTour \
             -resultBundlePath out/results.xcresult > out/test.log 2>&1
           code=$?
           kill -INT "$rec"; wait "$rec"

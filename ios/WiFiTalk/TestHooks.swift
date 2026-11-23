@@ -9,4 +9,14 @@ enum TestHooks {
     }
     static var commandRecording: URL? { url("uitestCommandAudio") }
     static var dictationRecording: URL? { url("uitestDictationAudio") }
+
+    /// `-demoSnippets YES` (the demo video only): two saved texts behind the header's clipboard button.
+    static func seedDemoSnippets() {
+        guard UserDefaults.standard.bool(forKey: "demoSnippets") else { return }
+        PasteSnippetStore.save([
+            PasteSnippet(title: "Email signature", text: "Best regards,
+IbnKabed"),
+            PasteSnippet(title: "Home address", text: "221B Baker Street, London"),
+        ])
+    }
 }

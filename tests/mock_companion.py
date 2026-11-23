@@ -6,6 +6,7 @@ receives. A small HTTP server on port 47822 lets the UI tests read that record:
   GET  /log        every action received, in order, as a JSON list
   GET  /stats      {"mic_bytes": n, "speaker_bytes": n, "connected": n, "files": n}
   POST /reset      clears the log and the counters
+  POST /mark/<n>   prints "MARK <time> <n>" (the demo video cuts its scenes at these marks)
   GET  /audio/<f>  serves a test recording (WAV) from the folder given with --audio
 
 It answers "getclip" with "Text from the computer", lists one file (hello.txt) in the shared folder,
@@ -34,6 +35,7 @@ def record(action):
     with lock:
         log.append(action)
     print("ACTION", json.dumps(action, ensure_ascii=False), flush=True)
+    print("AT %.3f" % time.time(), json.dumps(action, ensure_ascii=False), flush=True)
 
 
 def read_exact(sock, n):
@@ -192,6 +194,9 @@ def make_http(audio_dir):
                     log.clear()
                     for k in stats:
                         stats[k] = 0
+                self._send(200, b"{}")
+            elif self.path.startswith("/mark/"):
+                print("MARK %.3f %s" % (time.time(), self.path[6:]), flush=True)
                 self._send(200, b"{}")
             else:
                 self._send(404, b"{}")

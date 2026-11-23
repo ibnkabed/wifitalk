@@ -5,6 +5,7 @@ struct WiFiTalkApp: App {
     @StateObject private var model = AppModel()
 
     init() {
+        TestHooks.seedDemoSnippets()
         FirebaseHybrid.shared.configure()
     }
 
