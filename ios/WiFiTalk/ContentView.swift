@@ -562,15 +562,15 @@ private struct KeyboardHomeView: View {
     private func modifierRow(compact: Bool) -> some View {
         HStack(spacing: 5) {
             TextKey(title: "Tab ⇥", active: false, compact: compact) { fireKey("tab") }
-                .accessibilityIdentifier("tab")
+                .accessibilityIdentifier("key-tab")
             TextKey(title: "Alt", active: modifiers.contains("alt"), compact: compact) { toggleModifier("alt") }
-                .accessibilityIdentifier("alt")
+                .accessibilityIdentifier("key-alt")
             TextKey(title: "Shift ⇧", active: modifiers.contains("shift"), compact: compact) { toggleModifier("shift") }
-                .accessibilityIdentifier("shift")
+                .accessibilityIdentifier("key-shift")
             TextKey(title: "Ctrl", active: modifiers.contains("ctrl"), compact: compact) { toggleModifier("ctrl") }
-                .accessibilityIdentifier("ctrl")
+                .accessibilityIdentifier("key-ctrl")
             TextKey(title: "Esc", active: false, compact: compact) { fireKey("escape") }
-                .accessibilityIdentifier("esc")
+                .accessibilityIdentifier("key-esc")
         }
     }
 

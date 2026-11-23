@@ -413,8 +413,20 @@ enum SpeechText {
         guard let recognizer = SFSpeechRecognizer(locale: loc), recognizer.isAvailable else {
             throw WiFiTalkError.server("Speech recognition isn't available for this language right now")
         }
+        if recognizer.supportsOnDeviceRecognition {
+            do {
+                let text = try await recognize(url, with: recognizer, onDevice: true)
+                return Heard(text: text, locale: loc.identifier, onDevice: true)
+            } catch {
+                // the on-device model may be missing or still downloading: Apple's servers do it instead
+            }
+        }
+        let text = try await recognize(url, with: recognizer, onDevice: false)
+        return Heard(text: text, locale: loc.identifier, onDevice: false)
+    }
+
+    private static func recognize(_ url: URL, with recognizer: SFSpeechRecognizer, onDevice: Bool) async throws -> String {
         let request = SFSpeechURLRecognitionRequest(url: url)
-        let onDevice = recognizer.supportsOnDeviceRecognition
         request.requiresOnDeviceRecognition = onDevice
         request.addsPunctuation = true
         request.shouldReportPartialResults = false
@@ -432,6 +444,6 @@ enum SpeechText {
                 }
             }
         }
-        return Heard(text: text.trimmingCharacters(in: .whitespacesAndNewlines), locale: loc.identifier, onDevice: onDevice)
+        return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

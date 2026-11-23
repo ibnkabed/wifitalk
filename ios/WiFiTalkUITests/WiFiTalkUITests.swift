@@ -75,8 +75,8 @@ final class WiFiTalkUITests: XCTestCase {
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         for owner in [springboard, app] {
             for title in ["Allow", "OK", "Allow Paste", "Allow While Using App"] {
-                let button = owner.alerts.buttons[title]
-                if button.exists { button.tap() }
+                let button = owner.alerts.buttons[title].firstMatch
+                if button.exists { button.tap(); return }
             }
         }
     }
@@ -119,18 +119,18 @@ final class WiFiTalkUITests: XCTestCase {
 
     func test03_EscTabAndCtrl() {
         step("Esc, Tab, Ctrl+C, Shift")
-        button("esc").tap()
-        button("tab").tap()
-        button("ctrl").tap()
+        button("key-esc").tap()
+        button("key-tab").tap()
+        button("key-ctrl").tap()
         app.textViews["textBox"].tap()
         app.textViews["textBox"].typeText("c")
         waitForAction("Ctrl+C") { $0["k"] as? String == "ctrl+c" }
         XCTAssertTrue(keys().contains("escape"), "Esc not received: \(keys())")
         XCTAssertTrue(keys().contains("tab"), "Tab not received: \(keys())")
-        button("alt").tap()
-        button("tab").tap()
+        button("key-alt").tap()
+        button("key-tab").tap()
         waitForAction("Alt+Tab") { $0["k"] as? String == "alt+tab" }
-        button("shift").tap()
+        button("key-shift").tap()
         button("left").tap()
         waitForAction("Shift+Left") { $0["k"] as? String == "shift+left" }
     }
@@ -147,16 +147,14 @@ final class WiFiTalkUITests: XCTestCase {
 
     func test05_Clipboard() {
         step("clipboard both ways")
-        UIPasteboard.general.string = "From the iPhone"
-        button("copyToPC").tap()
-        allowSystemAlerts()
-        waitForAction("the iPhone's clipboard") { $0["t"] as? String == "clip" && $0["s"] as? String == "From the iPhone" }
+        // the computer's clipboard comes to the iPhone, then goes back: both directions, with no paste prompt
         button("getFromPC").tap()
         waitForAction("a clipboard request") { $0["t"] as? String == "getclip" }
-        let status = app.staticTexts["status"]
-        XCTAssertTrue(status.waitForExistence(timeout: 5))
         let copied = NSPredicate(format: "label CONTAINS 'Copied the computer clipboard'")
         XCTAssertTrue(app.staticTexts.matching(copied).firstMatch.waitForExistence(timeout: 10), "no confirmation on screen")
+        button("copyToPC").tap()
+        allowSystemAlerts()
+        waitForAction("the iPhone's clipboard") { $0["t"] as? String == "clip" && $0["s"] as? String == "Text from the computer" }
     }
 
     func test06_TrackpadMovesAndClicks() {
