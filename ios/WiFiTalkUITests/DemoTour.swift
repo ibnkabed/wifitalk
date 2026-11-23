@@ -167,9 +167,15 @@ final class DemoTour: XCTestCase {
         // 13. typing straight into the computer
         mark("typing")
         let box = app.textViews["textBox"].firstMatch
-        box.tap()
+        allowSystemAlerts()
+        for _ in 0..<3 where !app.keyboards.firstMatch.exists {
+            box.tap()
+            _ = app.keyboards.firstMatch.waitForExistence(timeout: 3)
+        }
         pause(1)
-        for word in ["Hello ", "from ", "my ", "iPhone"] { box.typeText(word); pause(0.4) }
+        if app.keyboards.firstMatch.exists {
+            for word in ["Hello ", "from ", "my ", "iPhone"] { app.typeText(word); pause(0.4) }
+        }
         pause(1.5)
         tap("clear", then: 1.5)
 
