@@ -43,8 +43,8 @@ jobs:
       - name: Start the stand-in computer
         run: |
           nohup python3 tests/mock_companion.py --audio "$PWD/audio" > out/mock.log 2>&1 &
-          sleep 2
-          curl -s http://127.0.0.1:47822/stats
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:47822/stats && exit 0; sleep 1; done
+          cat out/mock.log; exit 1
 
       - name: Pick and boot an iPhone simulator
         run: |
