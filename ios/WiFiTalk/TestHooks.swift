@@ -14,8 +14,7 @@ enum TestHooks {
     static func seedDemoSnippets() {
         guard UserDefaults.standard.bool(forKey: "demoSnippets") else { return }
         PasteSnippetStore.save([
-            PasteSnippet(title: "Email signature", text: "Best regards,
-IbnKabed"),
+            PasteSnippet(title: "Email signature", text: "Best regards, IbnKabed"),
             PasteSnippet(title: "Home address", text: "221B Baker Street, London"),
         ])
     }
