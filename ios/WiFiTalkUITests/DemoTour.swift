@@ -125,8 +125,13 @@ final class DemoTour: XCTestCase {
         let file = app.staticTexts["hello.txt"].firstMatch
         if file.waitForExistence(timeout: 8) { file.tap() }
         pause(3)
-        app.swipeDown(velocity: .fast)
-        pause(1.5)
+        // close whatever the download opened, then the files sheet, until the main screen is back
+        for _ in 0..<4 where !app.buttons["speaker"].firstMatch.isHittable {
+            let done = app.buttons["Done"].firstMatch
+            if done.exists { done.tap() } else { app.swipeDown(velocity: .fast) }
+            pause(1.2)
+        }
+        pause(0.8)
 
         // 8. the computer's sound on the iPhone
         mark("speaker")
