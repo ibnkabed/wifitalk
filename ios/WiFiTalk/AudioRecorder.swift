@@ -6,6 +6,9 @@ final class AudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate {
     @Published private(set) var isRecording = false
     private var recorder: AVAudioRecorder?
     private(set) var fileURL: URL?
+    /// UI tests only (launch argument): a recording to hand back instead of the microphone's, because a CI
+    /// simulator has no microphone. Set by the app model for each dictation or command.
+    var testRecording: URL?
 
     private func requirePermission() async throws {
         let session = AVAudioSession.sharedInstance()
@@ -32,6 +35,10 @@ final class AudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate {
     ///   `.playAndRecord` instead - the same compromise the two streamers
     ///   already make when they run together.
     func start(sharedWithStream: Bool = false) async throws {
+        if testRecording != nil {
+            isRecording = true
+            return
+        }
         try await requirePermission()
         recorder?.stop()
         recorder = nil
@@ -81,6 +88,14 @@ final class AudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate {
     ///   under a live stream kills it, which is why the two streamers already
     ///   hand this flag to each other.
     func stop(keepSessionActive: Bool = false) async -> URL? {
+        if let test = testRecording {
+            isRecording = false
+            testRecording = nil
+            guard let (data, _) = try? await URLSession.shared.data(from: test) else { return nil }
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("wifitalk-test-\(UUID().uuidString).wav")
+            try? data.write(to: url)
+            return url
+        }
         guard let activeRecorder = recorder else { return nil }
         let duration = activeRecorder.currentTime
         activeRecorder.stop()

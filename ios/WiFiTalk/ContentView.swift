@@ -34,7 +34,7 @@ private struct PairView: View {
                     .font(.system(size: 82))
                     .symbolRenderingMode(.palette)
                     .foregroundStyle(.cyan, .blue.opacity(0.35))
-                Text("WiFi Talk").font(.largeTitle.bold())
+                Text("WiFiTalk").font(.largeTitle.bold())
                 Text("Your computer's assistant, keyboard and sound in one app")
                     .foregroundStyle(.secondary)
 
@@ -245,7 +245,7 @@ private struct KeyboardHomeView: View {
                 .scaledToFit()
                 .frame(width: 26, height: 26)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            Text("WiFi Talk")
+            Text("WiFiTalk")
                 .font(.subheadline.bold())
                 .lineLimit(1)
                 .environment(\.layoutDirection, .leftToRight)
@@ -257,6 +257,7 @@ private struct KeyboardHomeView: View {
                 Task { await model.reportConnection() }
             }
             .accessibilityLabel("Connection: \(model.connectionLabel)")
+            .accessibilityIdentifier("connection")
             // saved texts typed into the computer without any model.
             HeaderButton(icon: "list.clipboard.fill", tint: .cyan) {
                 if filledSnippets.isEmpty {
@@ -270,8 +271,11 @@ private struct KeyboardHomeView: View {
                 snippetList.presentationCompactAdaptation(.popover)
             }
             HeaderButton(icon: "arrow.clockwise", tint: .orange) { showRestartConfirmation = true }
+                .accessibilityIdentifier("restart")
             HeaderButton(icon: "power", tint: .red) { showShutdownConfirmation = true }
+                .accessibilityIdentifier("shutdown")
             HeaderButton(icon: "gearshape") { showSettings = true }
+                .accessibilityIdentifier("settings")
         }
     }
 
@@ -329,6 +333,7 @@ private struct KeyboardHomeView: View {
                 .foregroundStyle(.secondary)
                 .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
                 .accessibilityLabel("Clear this box only")
+                .accessibilityIdentifier("clear")
             }
             .padding(7)
         }
@@ -346,6 +351,7 @@ private struct KeyboardHomeView: View {
             ActionButton(title: "Copy to computer", icon: "doc.on.clipboard") {
                 Task { await model.copyPhoneClipboardToPC() }
             }
+            .accessibilityIdentifier("copyToPC")
             Button {
                 showFiles = true
             } label: {
@@ -358,10 +364,12 @@ private struct KeyboardHomeView: View {
             .background(Color.cyan.opacity(0.75), in: Circle())
             .overlay(Circle().stroke(Color.cyan, lineWidth: 1.5))
             .accessibilityLabel("Transfer files")
+            .accessibilityIdentifier("files")
 
             ActionButton(title: "Get from computer", icon: "clipboard") {
                 Task { await model.copyPCClipboardToPhone() }
             }
+            .accessibilityIdentifier("getFromPC")
         }
     }
 
@@ -376,12 +384,14 @@ private struct KeyboardHomeView: View {
                 tint: providerKeyTint,
                 height: height
             ) { model.cycleTranscriptionProvider() }
+                .accessibilityIdentifier("dictationMode")
                 .accessibilityLabel("Dictation: \(model.transcriptionProvider.fullLabel)")
             OptionKey(
                 title: model.dictationLanguage.shortLabel,
                 tint: model.dictationLanguage == .automatic ? .cyan : .orange,
                 height: height
             ) { model.cycleDictationLanguage() }
+                .accessibilityIdentifier("dictationLanguage")
                 .accessibilityLabel("Dictation language: \(model.dictationLanguage.shortLabel)")
             commandButton(height: height)
             Button {
@@ -407,6 +417,7 @@ private struct KeyboardHomeView: View {
                     .stroke(model.isRecording ? Color.red : Color.cyan, lineWidth: 1)
             )
             .disabled(model.isRecordingCommand || model.isRunningCommand)
+            .accessibilityIdentifier("dictate")
         }
     }
 
@@ -446,10 +457,11 @@ private struct KeyboardHomeView: View {
                 .stroke(listening ? Color.orange : Color.purple, lineWidth: 1)
         )
         .disabled(model.isRecording || working)
-        .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in
+        .highPriorityGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in
             if !listening && !working { showTypedCommand = true }
         })
         .accessibilityLabel(listening ? "Run the command" : "Voice command for the computer")
+        .accessibilityIdentifier("command")
     }
 
     /// Red means the companion says this provider has no credentials, so the
@@ -477,6 +489,7 @@ private struct KeyboardHomeView: View {
             .multilineTextAlignment(.center)
             .contentShape(Rectangle())
             .onTapGesture { dismissKeyboard() }
+            .accessibilityIdentifier("status")
     }
 
     private func arrows(compact: Bool) -> some View {
@@ -490,7 +503,9 @@ private struct KeyboardHomeView: View {
                     width: 68,
                     height: size
                 ) { Task { await model.toggleComputerMic() } }
-                RemoteKey(icon: "arrow.up", width: 68, height: size) { fireKey("up") }
+                .accessibilityIdentifier("mic")
+                .accessibilityValue(model.isComputerMicActive ? "on" : "off")
+                RemoteKey(icon: "arrow.up", width: 68, height: size) { fireKey("up") }.accessibilityIdentifier("up")
                 RemoteActionKey(
                     icon: "headphones",
                     active: model.isComputerSpeakerActive,
@@ -498,11 +513,13 @@ private struct KeyboardHomeView: View {
                     width: 68,
                     height: size
                 ) { Task { await model.toggleComputerSpeaker() } }
+                .accessibilityIdentifier("speaker")
+                .accessibilityValue(model.isComputerSpeakerActive ? "on" : "off")
             }
             HStack(spacing: 6) {
-                RemoteKey(icon: "arrow.left", width: 68, height: size) { fireKey("left") }
-                RemoteKey(icon: "arrow.down", width: 68, height: size) { fireKey("down") }
-                RemoteKey(icon: "arrow.right", width: 68, height: size) { fireKey("right") }
+                RemoteKey(icon: "arrow.left", width: 68, height: size) { fireKey("left") }.accessibilityIdentifier("left")
+                RemoteKey(icon: "arrow.down", width: 68, height: size) { fireKey("down") }.accessibilityIdentifier("down")
+                RemoteKey(icon: "arrow.right", width: 68, height: size) { fireKey("right") }.accessibilityIdentifier("right")
             }
         }
         .environment(\.layoutDirection, .leftToRight)
@@ -545,10 +562,15 @@ private struct KeyboardHomeView: View {
     private func modifierRow(compact: Bool) -> some View {
         HStack(spacing: 5) {
             TextKey(title: "Tab ⇥", active: false, compact: compact) { fireKey("tab") }
+                .accessibilityIdentifier("tab")
             TextKey(title: "Alt", active: modifiers.contains("alt"), compact: compact) { toggleModifier("alt") }
+                .accessibilityIdentifier("alt")
             TextKey(title: "Shift ⇧", active: modifiers.contains("shift"), compact: compact) { toggleModifier("shift") }
+                .accessibilityIdentifier("shift")
             TextKey(title: "Ctrl", active: modifiers.contains("ctrl"), compact: compact) { toggleModifier("ctrl") }
+                .accessibilityIdentifier("ctrl")
             TextKey(title: "Esc", active: false, compact: compact) { fireKey("escape") }
+                .accessibilityIdentifier("esc")
         }
     }
 

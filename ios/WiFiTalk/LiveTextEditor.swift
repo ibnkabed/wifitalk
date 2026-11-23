@@ -24,6 +24,7 @@ struct LiveTextEditor: UIViewRepresentable {
     func makeUIView(context: Context) -> UITextView {
         let view = BackspaceTextView()
         view.delegate = context.coordinator
+        view.accessibilityIdentifier = "textBox"
         view.onEmptyBackspace = onEmptyBackspace
         view.backgroundColor = .clear
         view.textColor = UIColor(red: 0.82, green: 0.87, blue: 0.93, alpha: 1)

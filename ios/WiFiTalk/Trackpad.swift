@@ -45,7 +45,9 @@ struct TrackpadView: View {
             )
         }
         .animation(.easeOut(duration: 0.12), value: isTouching)
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel("Trackpad")
+        .accessibilityIdentifier("trackpad")
         .accessibilityHint("Slide one finger to move the pointer, tap to click, use two fingers to scroll")
     }
 }

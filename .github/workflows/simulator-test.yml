@@ -1,0 +1,103 @@
+# Tests the iPhone app in the iOS simulator, control by control, against a stand-in for the Windows companion
+# (tests/mock_companion.py) that records every action it receives. Voice commands and dictation use recordings
+# made here with macOS `say`, and go through Apple speech and the real hybrid AI (Firebase AI Logic). The run is
+# recorded on video. Run by hand; the video, the logs and the test results come back as the artifact.
+name: Simulator test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ui-test:
+    runs-on: xcode-27
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Add the Firebase config from the repository secret
+        env:
+          PLIST_B64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_B64 }}
+        run: |
+          set -euo pipefail
+          echo "$PLIST_B64" | base64 --decode > ios/WiFiTalk/GoogleService-Info.plist
+          plutil -lint ios/WiFiTalk/GoogleService-Info.plist
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Make the spoken test recordings
+        run: |
+          set -euo pipefail
+          mkdir -p audio out
+          say -o audio/command.wav --file-format=WAVE --data-format=LEI16@16000 "Open Notepad and write hello world"
+          say -o audio/dictation.wav --file-format=WAVE --data-format=LEI16@16000 "This is a dictation test from the iPhone"
+          ls -l audio
+
+      - name: Start the stand-in computer
+        run: |
+          nohup python3 tests/mock_companion.py --audio "$PWD/audio" > out/mock.log 2>&1 &
+          sleep 2
+          curl -s http://127.0.0.1:47822/stats
+
+      - name: Pick and boot an iPhone simulator
+        run: |
+          set -euo pipefail
+          udid=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devs = [d for rt, ds in json.load(sys.stdin)["devices"].items() if "iOS" in rt for d in ds]
+          pro = [d for d in devs if "Pro Max" not in d["name"] and "Pro" in d["name"] and d["name"].startswith("iPhone")]
+          print((pro or [d for d in devs if d["name"].startswith("iPhone")])[-1]["udid"])')
+          echo "UDID=$udid" >> "$GITHUB_ENV"
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          xcrun simctl status_bar "$udid" override --time "9:41" --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
+
+      - name: Build for testing
+        env:
+          APP_CHECK_DEBUG_TOKEN: ${{ secrets.APP_CHECK_DEBUG_TOKEN }}
+        run: |
+          set -euo pipefail
+          xcodebuild build-for-testing \
+            -project ios/WiFiTalk.xcodeproj -scheme WiFiTalk -configuration Debug \
+            -destination "id=$UDID" -derivedDataPath ios/build \
+            CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= \
+            APP_CHECK_DEBUG_TOKEN="$APP_CHECK_DEBUG_TOKEN" | tail -5
+
+      - name: Run the UI tests (recorded)
+        run: |
+          set +e
+          xcrun simctl io "$UDID" recordVideo --codec=h264 --force out/simulator-test.mov &
+          rec=$!
+          sleep 2
+          xcodebuild test-without-building \
+            -project ios/WiFiTalk.xcodeproj -scheme WiFiTalk \
+            -destination "id=$UDID" -derivedDataPath ios/build \
+            -resultBundlePath out/results.xcresult > out/test.log 2>&1
+          code=$?
+          kill -INT "$rec"; wait "$rec"
+          xcrun simctl spawn "$UDID" log show --last 60m --predicate 'process == "WiFiTalk"' --style compact > out/app-log.txt 2>/dev/null
+          echo "---- results"
+          grep -E "Test Case .*(passed|failed)|error:|UITEST" out/test.log | sed 's/^.*Test Case/Test Case/' | head -120
+          echo "---- hybrid AI"
+          grep -h "FirebaseHybrid" out/app-log.txt | grep -v -i token | tail -40
+          echo "---- actions the computer received"
+          grep ACTION out/mock.log | tail -80
+          exit $code
+
+      - name: Upload the video and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulator-test
+          path: |
+            out/simulator-test.mov
+            out/test.log
+            out/mock.log
+            out/app-log.txt

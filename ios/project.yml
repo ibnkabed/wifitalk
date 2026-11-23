@@ -43,3 +43,21 @@ targets:
         product: FirebaseAppCheck
       - package: Firebase
         product: FirebaseRemoteConfig
+    scheme:
+      testTargets:
+        - WiFiTalkUITests
+  # Presses every control in the simulator against tests/mock_companion.py (.github/workflows/simulator-test.yml)
+  WiFiTalkUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: WiFiTalkUITests
+    dependencies:
+      - target: WiFiTalk
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.ibnkabed.wifitalk.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: WiFiTalk
+        CODE_SIGN_STYLE: Automatic

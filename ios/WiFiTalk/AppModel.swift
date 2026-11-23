@@ -464,6 +464,7 @@ final class AppModel: ObservableObject {
         } else {
             guard !isRecording, !isRunningCommand else { return }
             do {
+                recorder.testRecording = TestHooks.commandRecording
                 try await recorder.start(sharedWithStream: streamOwnsAudioSession)
                 isRecordingCommand = true
                 message = "Say your command… then tap the command button again"
@@ -543,6 +544,7 @@ final class AppModel: ObservableObject {
             await restoreSpeakerRouteAfterDictation()
         } else {
             do {
+                recorder.testRecording = TestHooks.dictationRecording
                 try await recorder.start(sharedWithStream: streamOwnsAudioSession)
                 isRecording = true
                 message = "Listening… tap Dictate again to send · \(transcriptionProvider.fullLabel)"
