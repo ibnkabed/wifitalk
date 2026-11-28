@@ -52,7 +52,7 @@ All AI calls are in [`ios/WiFiTalk/AI/FirebaseHybrid.swift`](ios/WiFiTalk/AI/Fir
 
 ### Windows computer
 
-1. Download `WiFiTalk.exe` from the [latest release](https://github.com/ibnkabed/wifitalk/releases/latest).
+1. Download `WiFiTalk.exe` from the [latest release](https://github.com/ibnkabed/wifitalk-firebase/releases/latest).
 2. Run it. It needs no installation and no administrator rights.
    - Windows SmartScreen may warn that the program is unsigned. Choose **More info**, then **Run anyway**.
    - When Windows Firewall asks, allow it on **private networks**.
@@ -63,7 +63,7 @@ All AI calls are in [`ios/WiFiTalk/AI/FirebaseHybrid.swift`](ios/WiFiTalk/AI/Fir
 
 ### iPhone
 
-1. Download `WiFiTalk-unsigned.ipa` from the [latest release](https://github.com/ibnkabed/wifitalk/releases/latest).
+1. Download `WiFiTalk-unsigned.ipa` from the [latest release](https://github.com/ibnkabed/wifitalk-firebase/releases/latest).
 2. Install it with [Sideloadly](https://sideloadly.io) and a free Apple ID. It needs iOS 17 or later; on-device AI needs an iPhone with Apple Intelligence on iOS 26 or later.
 3. Open WiFiTalk, then enter the computer's address and PIN. Both devices must be on the same Wi-Fi.
 

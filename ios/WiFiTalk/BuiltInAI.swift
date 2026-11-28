@@ -27,7 +27,7 @@ struct AboutSection: View {
         Section("About") {
             Text("WiFiTalk turns your iPhone into your Windows computer's AI assistant, keyboard, trackpad, microphone and speaker, over your Wi-Fi.")
                 .font(.callout)
-            Link(destination: URL(string: "https://github.com/ibnkabed/wifitalk")!) {
+            Link(destination: URL(string: "https://github.com/ibnkabed/wifitalk-firebase")!) {
                 Label("Source code and the Windows companion", systemImage: "chevron.left.forwardslash.chevron.right")
             }
             Text("Copyright (c) 2026 IbnKabed")
